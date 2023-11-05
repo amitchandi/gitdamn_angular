@@ -5,9 +5,14 @@ import { RepositoryObject } from 'src/app/username/username.component';
   providedIn: 'root'
 })
 export class RepositoryService {
+  backendURL: string = ''
+
+  constructor() {
+    this.backendURL = `${location.protocol}//${location.hostname}:4000`
+  }
 
   async getBranches(username: string, repositoryName: string) {
-    const response = await fetch(`http://localhost:4000/${username}/${repositoryName}/branches`,
+    const response = await fetch(`${this.backendURL}/${username}/${repositoryName}/branches`,
     {
       cache: 'no-cache'
     })
@@ -21,7 +26,7 @@ export class RepositoryService {
 
   async getRepositoryData(username: string, repositoryObjects: string[]) {
     const res = await fetch(
-      `http://localhost:4000/${username}/${repositoryObjects.join('/')}`,
+      `${this.backendURL}/${username}/${repositoryObjects.join('/')}`,
       {
         cache: 'no-cache'
       }
@@ -52,7 +57,7 @@ export class RepositoryService {
   }
 
   async getRepositoryLatestCommitInfo(username: string, repositoryName: string, branch: string | undefined) {
-    let url = `http://localhost:4000/${username}/${repositoryName}/log`
+    let url = `${this.backendURL}/${username}/${repositoryName}/log`
     if (branch)
       url += `/${branch}`
 
@@ -68,7 +73,7 @@ export class RepositoryService {
   }
 
   async getRepositoryObjectInfo(username: string, repositoryName: string, branch: string, filename: string) {
-    let url = `http://localhost:4000/${username}/${repositoryName}/log/${branch}/${filename}`
+    let url = `${this.backendURL}/${username}/${repositoryName}/log/${branch}/${filename}`
 
     const res = await fetch(url,
       {

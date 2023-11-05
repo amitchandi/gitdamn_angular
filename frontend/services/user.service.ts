@@ -4,9 +4,14 @@ import { Injectable } from '@angular/core';
   providedIn: 'root'
 })
 export class UserService {
+  backendURL: string = ''
+
+  constructor() {
+    this.backendURL = `${location.protocol}//${location.hostname}:4000`
+  }
 
   async getUsers() : Promise<GD_User[]> {
-    const response = await fetch('http://localhost:4000/users',
+    const response = await fetch(`${this.backendURL}/users`,
     {
       cache: 'no-cache'
     })
@@ -14,7 +19,7 @@ export class UserService {
   }
   
   async getUserRepos(username: string) {
-    const response = await fetch(`http://localhost:4000/${username}`,
+    const response = await fetch(`${this.backendURL}/${username}`,
     {
       cache: 'no-cache'
     })
@@ -22,7 +27,7 @@ export class UserService {
   }
 
   async registerUser(data: any) {
-    const response = await fetch('http://localhost:4000/users/create',
+    const response = await fetch(`${this.backendURL}/users/create`,
     {
       method: 'POST',
       cache: 'no-cache',
