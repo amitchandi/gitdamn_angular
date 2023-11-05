@@ -1,0 +1,108 @@
+<div
+    *ngIf="!isLoaded; else Loaded"
+    class="mx-auto block w-fit mt-20"
+>
+    <mat-spinner></mat-spinner>
+</div>
+
+<ng-template #Loaded>
+    <div class='flex flex-col items-center pt-6'>
+        
+        <div class='container relative'>
+            
+            <div class="inline float-left w-100px">
+                <p-dropdown [options]="branchesDD" [(ngModel)]="branch" optionLabel="name" optionValue="value" (onChange)="onBranchDropDownChanged()"></p-dropdown>
+            </div>
+            
+            <ul class='flex flex-wrap items-center justify-center align-baseline text-gray-900 dark:text-white'>
+                <li *ngFor="let breadcrumb of breadcrumbs">
+                    <span *ngIf="breadcrumbs.indexOf(breadcrumb) === breadcrumbs.length - 1; else link" >
+                        {{breadcrumb.name}}
+                    </span>
+    
+                    <ng-template #link>
+                        <a href="{{breadcrumb.path}}" class='text-blue-600 dark:text-blue-500 hover:underline'>
+                            {{breadcrumb.name}}
+                        </a>
+                        <span>/&nbsp;</span>
+                    </ng-template>
+                </li>
+            </ul>
+
+        </div>
+
+        <div class="container pt-5 columns-3">
+            <div><a href="/{{username}}">{{username}}</a></div>
+            <div>{{latestCommitInfo?.message}}</div>
+            <div>
+                <a href="" class="dark:text-blue-500">{{latestCommitInfo?.hash?.substr(0,7)}}</a>  {{latestCommitInfo?.date}}</div>
+        </div>
+
+        <div *ngIf="repositoryData?.type === '404' else Found"
+            class="pt-5 text-center">
+            <h1>404 - Page Not Found</h1>
+            <span>The <span class="text-blue-600 dark:bg-black">{{branch}}</span> branch does not contain the path to <var>{{repositoryObjects[repositoryObjects.length - 1]}}</var></span>
+        </div>
+
+        <ng-template #Found>
+            <div class='container top-5 relative overflow-x-auto shadow-md sm:rounded-lg'>
+
+                <div *ngIf="repositoryData?.type === 'file'; else folder">
+                    <pre class="rounded-lg"><code class="language-javascript line-numbers">{{repositoryData?.body?.join('\n')}}</code></pre>
+                </div>
+                <ng-template #folder>
+                    <table class='w-full text-sm text-left text-gray-500 dark:text-gray-400'>
+                        <thead class='text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400'>
+                            <tr>
+                                <th></th>
+                                <th class='px-6 py-4'>Name</th>
+                                <th>Last commit message</th>
+                                <th>Last commit date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngIf="!isRoot;" class='bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'>
+                                <td colSpan='4' class='px-6 py-4 dark:text-white cursor-pointer hover:underline hover:text-blue-600 hover:dark:text-blue-500' (click)="onClickBack()">
+                                    <a href="{{previousRepositoryPath}}">
+                                        ..
+                                    </a>
+                                </td>
+                            </tr>
+                            
+                            <tr
+                                *ngFor="let repoObject of repositoryData?.body"
+                                class='bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
+                            >
+                                <td class='font-medium text-gray-900 dark:text-white pl-5 w-1'>
+                                    <div *ngIf="repoObject.isDirectory; else file;">
+                                        <mat-icon aria-hidden="false" aria-label="" fontIcon="folder"></mat-icon>
+                                    </div>
+        
+                                    <ng-template #file>
+                                        <div>
+                                            <mat-icon aria-hidden="false" aria-label="" style="margin-left: 5px;font-size: 20px; width: 20px; height: 20px;" fontSet="far" fontIcon="fa-file"></mat-icon>
+                                        </div>
+                                    </ng-template>
+                                </td>
+                                <td class='flex flex-nowrap py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
+                                    <a
+                                        href='{{currentRepositoryPath}}/{{repoObject.name}}'
+                                        class='align-bottom ml-5 bottom-0 hover:text-blue-600 hover:dark:text-blue-500 hover:underline'
+                                    >
+                                        {{repoObject.name}}
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="" class="hover:text-blue-600 hover:dark:text-blue-500 hover:underline">{{repoObject.message}}</a>
+                                </td>
+                                <td>{{repoObject.date}}</td>
+                            </tr>
+        
+                        </tbody>
+                    </table>
+                </ng-template>
+            </div>
+        </ng-template>
+
+    </div>
+</ng-template>

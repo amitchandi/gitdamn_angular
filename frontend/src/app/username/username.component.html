@@ -1,0 +1,23 @@
+<div *ngIf="!isLoaded; else Loaded;" class="mx-auto block w-fit mt-20">
+    <mat-spinner></mat-spinner>
+</div>
+
+<ng-template #Loaded>
+    <div *ngIf="repos.length == 0; else elseBlock">User has no repositories</div>
+    <ng-template #elseBlock>
+        <div class="container mx-auto relative overflow-x-auto shadow-md sm:rounded-lg">
+            <ul class='w-full divide-y divide-gray-200 dark:divide-gray-700'>
+                <li class='border-b-2 border-neutral-100 border-opacity-100 py-4 dark:border-opacity-50'
+                    *ngFor="let repo of repos"
+                >
+                    <a  class='text-blue-600 dark:text-blue-500 hover:underline'
+                        href="/{{username}}/{{repo.name}}">
+                        {{repo.name}}
+                    </a>
+                    <span class="bg-gray-100 text-gray-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full dark:bg-gray-700 dark:text-gray-300 ml-3">Private</span>
+                    <span class='text-left text-gray-500 dark:text-gray-400'>Updated: x hours ago</span>
+                </li>
+            </ul>
+        </div>
+    </ng-template>
+</ng-template>

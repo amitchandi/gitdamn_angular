@@ -1,0 +1,5 @@
+#!/bin/sh
+
+read oldrev newrev refname
+rm -rf files/${refname##*/}
+git clone -q --branch ${refname##*/} $GIT_DIR/ files/${refname##*/} > /dev/null

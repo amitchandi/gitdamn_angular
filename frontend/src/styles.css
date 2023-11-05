@@ -1,0 +1,45 @@
+/* You can add global styles to this file, and also import other style files */
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
+@import "tailwindcss/base" layer(tailwindcss);
+@import "tailwindcss/components" layer(tailwindcss);
+@import "tailwindcss/utilities" layer(tailwindcss);
+
+:root {
+    --foreground-rgb: 0, 0, 0;
+    --background-start-rgb: 214, 219, 220;
+    --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --foreground-rgb: 255, 255, 255;
+        --background-start-rgb: 18, 18, 18;
+        --background-end-rgb: 10, 10, 10;
+    }
+}
+
+body {
+    color: rgb(var(--foreground-rgb));
+    background: linear-gradient(to bottom,
+            transparent,
+            rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
+}
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+@import "~prismjs/plugins/toolbar/prism-toolbar.css";
+@import "~prismjs/plugins/line-numbers/prism-line-numbers.css";
+
+@import "~prismjs/themes/prism-tomorrow";
+
+@import "~@fortawesome/fontawesome-free/css/all.css";
+
+.card {
+    background: var(--surface-card);
+    padding: 2rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+}
