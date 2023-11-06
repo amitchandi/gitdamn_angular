@@ -17,7 +17,7 @@ import cors from 'cors'
 import users from './routes/users'
 import username from './routes/username'
 
-global.appRoot = __dirname.replace('\\dist', '')
+global.appRoot = __dirname.replace('\\dist', '').replace('/dist', '')
 
 //REPLACE WITH CONFIG FILE AT SOME POINT
 const uri = "mongodb://localhost/"
@@ -27,6 +27,7 @@ var git_server = http.createServer(function (req, res) {
 	try {
         if (!req.url)
         	throw new Error('missing url')
+		
 		const user = req.url.split('/')[1]
 		const repo = req.url.split('/')[2]
 		const dir = path.join(global.appRoot, 'repos', `${user}/${repo}`)
@@ -50,7 +51,8 @@ git_server.listen(5000)
 const expressApp = express()
 expressApp.use(express.json())
 expressApp.use(cors({
-	origin: 'http://localhost:4200',
+	// origin: 'http://localhost:4200',
+	origin: '*',
 	allowedHeaders: ['type', 'content-type'],
 	exposedHeaders: ['type'],
 	methods: ['GET', 'POST']

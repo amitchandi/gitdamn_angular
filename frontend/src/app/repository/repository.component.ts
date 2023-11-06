@@ -8,9 +8,12 @@ import { Router } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TableModule } from 'primeng/table';
 import { DropdownModule } from 'primeng/dropdown';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
 import { FormsModule } from '@angular/forms';
-import { formatDistance } from 'date-fns'
-import { RepositoryObject } from '../username/username.component';
+import { formatDistance } from 'date-fns';
+import { ClipboardModule } from '@angular/cdk/clipboard'
 
 @Component({
   selector: 'app-repository',
@@ -21,7 +24,11 @@ import { RepositoryObject } from '../username/username.component';
     MatProgressSpinnerModule,
     DropdownModule,
     FormsModule,
-    TableModule
+    TableModule,
+    OverlayPanelModule,
+    ButtonModule,
+    InputTextModule,
+    ClipboardModule
   ],
   templateUrl: './repository.component.html',
   styleUrls: ['./repository.component.css']
@@ -42,6 +49,7 @@ export class RepositoryComponent {
   previousRepositoryPath: string = ''
   currentRepositoryDirectory: string = ''
   latestCommitInfo: CommitInfo | undefined
+  repositoryLink: string = ''
 
   repositoryService: RepositoryService = inject(RepositoryService)
 
@@ -58,10 +66,13 @@ export class RepositoryComponent {
     this.repositoryObjects = this.route.snapshot.url.map(urlSegment => urlSegment.path)
     this.isRoot = this.repositoryObjects.length === 0 || this.repositoryObjects.length === 2
 
+    console.log(location.href)
+    this.repositoryLink = location.href
 
     const branchSummary = await this.repositoryService.getBranches(this.username, this.repositoryName)
 
     this.currentBranch = branchSummary.current
+    
     this.branches = branchSummary.all
 
     this.branchesDD = this.branches.map(e => {
@@ -69,6 +80,7 @@ export class RepositoryComponent {
     })
 
     if (!this.repositoryObjects.includes('tree')) {
+      this.branch = this.currentBranch
       this.repositoryObjects.unshift(this.currentBranch)
       this.repositoryObjects.unshift('tree')
     } else {
@@ -91,7 +103,7 @@ export class RepositoryComponent {
 
     this.repositoryObjects.forEach(repo => {
       prevDir += `/${repo}`
-      console.log()
+      
       if (!(repo === 'tree' || repo === this.currentBranch)) {
         this.breadcrumbs.push({
           name: repo,

@@ -73,7 +73,7 @@ export class RepositoryService {
   }
 
   async getRepositoryObjectInfo(username: string, repositoryName: string, branch: string, filename: string) {
-    let url = `${this.backendURL}/${username}/${repositoryName}/log/${branch}/${filename}`
+    let url = `http://localhost:4000/${username}/${repositoryName}/log/${branch}/${filename}`
 
     const res = await fetch(url,
       {

@@ -163,8 +163,9 @@ router.post('/:new_repo_name', async (req: Request, res: Response) => {
             fs.readFile(path.join(global.appRoot, hook_file), async (err, contents) => {
                 if (err) return console.log(err)
                 const filepath = path.join(repo_dir, hook_file)
+                console.log(hook_file)
                 await fsPromises.writeFile(filepath, contents)
-                fsPromises.chmod(filepath, '111')
+                fsPromises.chmod(filepath, '711')
             })
         })
 
