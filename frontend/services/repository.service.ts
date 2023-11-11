@@ -1,18 +1,13 @@
 import { Injectable } from '@angular/core';
-import { RepositoryObject } from 'src/app/username/username.component';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class RepositoryService {
-  backendURL: string = ''
-
-  constructor() {
-    this.backendURL = `${location.protocol}//${location.hostname}:4000`
-  }
 
   async getBranches(username: string, repositoryName: string) {
-    const response = await fetch(`${this.backendURL}/${username}/${repositoryName}/branches`,
+    const response = await fetch(`${environment.apiUrl}/${username}/${repositoryName}/branches`,
     {
       cache: 'no-cache'
     })
@@ -26,7 +21,7 @@ export class RepositoryService {
 
   async getRepositoryData(username: string, repositoryObjects: string[]) {
     const res = await fetch(
-      `${this.backendURL}/${username}/${repositoryObjects.join('/')}`,
+      `${environment.apiUrl}/${username}/${repositoryObjects.join('/')}`,
       {
         cache: 'no-cache'
       }
@@ -57,7 +52,7 @@ export class RepositoryService {
   }
 
   async getRepositoryLatestCommitInfo(username: string, repositoryName: string, branch: string | undefined) {
-    let url = `${this.backendURL}/${username}/${repositoryName}/log`
+    let url = `${environment.apiUrl}/${username}/${repositoryName}/log`
     if (branch)
       url += `/${branch}`
 

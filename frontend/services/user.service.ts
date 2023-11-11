@@ -1,17 +1,13 @@
 import { Injectable } from '@angular/core';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
-  backendURL: string = ''
-
-  constructor() {
-    this.backendURL = `${location.protocol}//${location.hostname}:4000`
-  }
 
   async getUsers() : Promise<GD_User[]> {
-    const response = await fetch(`${this.backendURL}/users`,
+    const response = await fetch(`${environment.apiUrl}/users`,
     {
       cache: 'no-cache'
     })
@@ -19,7 +15,7 @@ export class UserService {
   }
   
   async getUserRepos(username: string) {
-    const response = await fetch(`${this.backendURL}/${username}`,
+    const response = await fetch(`${environment.apiUrl}/${username}`,
     {
       cache: 'no-cache'
     })
@@ -27,7 +23,7 @@ export class UserService {
   }
 
   async registerUser(data: any) {
-    const response = await fetch(`${this.backendURL}/users/create`,
+    const response = await fetch(`${environment.apiUrl}/users/create`,
     {
       method: 'POST',
       cache: 'no-cache',
