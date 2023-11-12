@@ -87,8 +87,10 @@ router.post('/login/:username/:password', async (req: Request, res: Response) =>
             res.status(400).json('invalid username or password')
         else {
             var match = await bcrypt.compare(req.params.password, result.password)
-            if (match)
+            if (match) {
+                delete result.password
                 res.status(200).json(result)
+            }
             else 
                 res.status(400).json('invalid username or password')
         }

@@ -1,0 +1,18 @@
+<p-button (click)="showDialog()" size="small">
+    Login
+</p-button>
+<p-dialog [(visible)]="visible" [style]="{width: '40vw'}">
+    <div class="text-center">
+        <form [formGroup]="loginForm" (ngSubmit)="onClickSubmit()" class="form-signin">
+            <label for="inputEmail" class="sr-only">Email address</label>
+            <input type="text" id="username" class="form-control"
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                formControlName="username" placeholder="Username" required autofocus aria-placeholder="Username">
+            <label for="inputPassword" class="sr-only">Password</label>
+            <input type="password" id="inputPassword"
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                formControlName="password" placeholder="Password" required>
+            <button pButton pRipple class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+        </form>
+    </div>
+</p-dialog>

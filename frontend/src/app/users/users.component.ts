@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserService } from 'services/user.service';
 import { MatIconModule } from '@angular/material/icon';
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-users',
@@ -18,7 +19,9 @@ export class UsersComponent {
   
   userService: UserService = inject(UserService);
 
-  constructor() {}
+  constructor(private authService: AuthService) {
+    console.log(authService.isUserLoggedIn)
+  }
 
   ngOnInit() {
     this.userService.getUsers().then(users => this.users = users);
