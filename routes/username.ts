@@ -2,9 +2,7 @@ import express, { Request, Response } from 'express'
 import path from 'path'
 import fs from 'fs'
 import simpleGit from 'simple-git'
-import { MongoClient } from "mongodb"
-
-const TREE = 'tree'
+import { MongoClient } from 'mongodb'
 
 const mongoURI = process.env.uri || 'mongodb://127.0.0.1:27017'
 
@@ -36,8 +34,9 @@ router.get('/:repo_name/branches', async (req: Request, res: Response) => {
 	try {
         const git = simpleGit(repo_dir)
 		const result = await git.branchLocal()
+        if (!result.current)
+            result.current = 'main' // for new repos
 		res.status(200).json(result)
-        res.end()
 	} catch (err) {
         console.log(err)
 		res.status(400).end()
@@ -50,7 +49,8 @@ router.get('/:repo_name', async (req: Request, res: Response) => {
 	try {
         const git = simpleGit(repo_dir)
 		const result = await git.branchLocal()
-        res.redirect(301, `/${req.params.username}/${repo_name}/tree/${result.current}`)
+        const branch = result.current ? result.current : result.all[0]
+        res.redirect(301, `/${req.params.username}/${repo_name}/tree/${branch}`)
 	} catch (err) {
         console.log(err)
 		res.status(400).end()
@@ -61,7 +61,7 @@ router.get(['/:repo_name/tree/:branch', '/:repo_name/tree/:branch/*'], async (re
     try {
         const repo_name = req.params.repo_name
         const branch = req.params.branch
-        const repo_location = req.originalUrl.replace(`/${req.params.username}/${repo_name}/${TREE}/${branch}`, '')
+        const repo_location = req.originalUrl.replace(`/${req.params.username}/${repo_name}/tree/${branch}`, '')
         const directoryPath =
         path.join(global.appRoot, 'repos', req.params.username, repo_name, 'files', branch, repo_location)
         
