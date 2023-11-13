@@ -1,10 +1,9 @@
 declare global {
     var appRoot: string
-	var reposRoot: string
 }
 
-// require('./loadEnvironment')
-import ('./loadEnvironment')
+import * as dotenv from 'dotenv'
+dotenv.config()
 
 import * as http from 'http'
 import { spawn } from 'child_process'
@@ -14,14 +13,13 @@ import * as zlib from 'zlib'
 import express from 'express'
 import cors from 'cors'
 
+import fs from 'fs'
+import * as https from 'https'
+
 import users from './routes/users'
 import username from './routes/username'
 
 global.appRoot = __dirname.replace('\\dist', '').replace('/dist', '')
-
-//REPLACE WITH CONFIG FILE AT SOME POINT
-const uri = "mongodb://localhost/"
-//REPLACE WITH CONFIG FILE AT SOME POINT
 
 var git_server = http.createServer(function (req, res) {
 	try {
@@ -46,23 +44,40 @@ var git_server = http.createServer(function (req, res) {
 		console.log(err)
 	}
 })
-git_server.listen(5000)
+git_server.listen(process.env.GIT_PORT)
 
 const expressApp = express()
 expressApp.use(express.json())
 expressApp.use(cors({
-	// origin: 'http://localhost:4200',
 	origin: '*',
 	allowedHeaders: ['type', 'content-type'],
 	exposedHeaders: ['type'],
-	methods: ['GET', 'POST']
+	methods: ['GET', 'POST', 'PUT', 'DELETE']
 }))
-const port = 4000
 
 expressApp.use('/users', users)
 
 expressApp.use('/:username', username)
 
-expressApp.listen(port, () => {
-	console.log(`Example app listening on port ${port}`)
-})
+if (process.env['USE_HTTPS'] === 'true') {
+	const port = process.env.HTTPS_PORT
+	const ssl_key = process.env.SSL_KEY
+	const ssl_cert = process.env.SSL_CERT
+	if (!ssl_key || !ssl_cert)
+		throw new Error('SSL_KEY and SSL_CERT environment variables are required')
+	
+	const httpsServer = https.createServer({
+		key: fs.readFileSync(ssl_key),
+		cert: fs.readFileSync(ssl_cert),
+	}, expressApp)
+	
+	httpsServer.listen(port, () => {
+		console.log(`HTTPS Server running on port ${port}`)
+	})
+
+} else {
+	const port = process.env.HTTP_PORT
+	expressApp.listen(port, () => {
+		console.log(`Example app listening on port ${port}`)
+	})
+}

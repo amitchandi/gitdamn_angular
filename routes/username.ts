@@ -23,10 +23,10 @@ router.get('/', async (req: Request, res: Response) => {
                 }
             })
             .filter(file => file.isDirectory)
-		res.json(results)
+		res.status(200).json(results)
 	} catch(err) {
 		console.log(err)
-		res.end()
+		res.status(400).end()
 	}
 })
 
@@ -36,11 +36,11 @@ router.get('/:repo_name/branches', async (req: Request, res: Response) => {
 	try {
         const git = simpleGit(repo_dir)
 		const result = await git.branchLocal()
-		res.json(result)
+		res.status(200).json(result)
         res.end()
 	} catch (err) {
         console.log(err)
-		res.end()
+		res.status(400).end()
 	}
 })
 
@@ -53,7 +53,7 @@ router.get('/:repo_name', async (req: Request, res: Response) => {
         res.redirect(301, `/${req.params.username}/${repo_name}/tree/${result.current}`)
 	} catch (err) {
         console.log(err)
-		res.end()
+		res.status(400).end()
 	}
 })
 
@@ -171,18 +171,18 @@ router.post('/:new_repo_name', async (req: Request, res: Response) => {
 
         console.log(result)
         if (!result.acknowledged)
-            throw new Error('Error creating record in database')
+            res.status(400).send('Database error')
         else
-            res.send(`/${req.params.username}/${new_repo_name}`)
+            res.status(200).send(`/${req.params.username}/${new_repo_name}`)
     } catch(err: any) {
         console.log(err)
 
         await fsPromises.rm(repo_dir, {recursive: true, force: true })
 
         if (err.code === 'EEXIST')
-            res.send('Repository already exists.')
+            res.status(400).send('Repository already exists.')
         else
-            res.send('Cannot create repository.')
+            res.status(400).send('Cannot create repository.')
     } finally {
         await client.close()
     }

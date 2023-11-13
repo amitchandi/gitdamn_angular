@@ -10,16 +10,14 @@ const fsPromises = fs.promises
 
 const router = express.Router()
 
-//REPLACE WITH CONFIG FILE AT SOME POINT
-const uri = "mongodb://127.0.0.1:27017"
-//REPLACE WITH CONFIG FILE AT SOME POINT
+const mongoURI = process.env.uri || 'mongodb://127.0.0.1:27017'
 
 router.get('/', (req: Request, res: Response) => {
     res.redirect('/users/list')
 })
 
 router.get('/list', async (req: Request, res: Response) => {
-    const client = new MongoClient(uri)
+    const client = new MongoClient(mongoURI)
     try {
         const database = client.db('GIT_DAMN')
         const users = database.collection('users')
@@ -32,7 +30,8 @@ router.get('/list', async (req: Request, res: Response) => {
 
         // print a message if no documents were found
         if ((await users.countDocuments({})) === 0) {
-            res.send("No documents found!")
+            res.status(400).send("No documents found!")
+            return
         }
         const list = [];
         for await (const doc of cursor) {
@@ -48,7 +47,7 @@ router.get('/list', async (req: Request, res: Response) => {
 })
 
 router.post('/create', async (req: Request, res: Response) => {
-    const client = new MongoClient(uri)
+    const client = new MongoClient(mongoURI)
     try {
 
         const salt = await bcrypt.genSalt(saltRound)
@@ -77,7 +76,7 @@ router.post('/create', async (req: Request, res: Response) => {
 })
 
 router.post('/login/:username/:password', async (req: Request, res: Response) => {
-    const client = new MongoClient(uri)
+    const client = new MongoClient(mongoURI)
     try {
         const database = client.db('GIT_DAMN')
         const users = database.collection('users')
@@ -103,7 +102,7 @@ router.post('/login/:username/:password', async (req: Request, res: Response) =>
 })
 
 router.delete('/delete/:id', async (req: Request, res: Response) => {
-    const client = new MongoClient(uri)
+    const client = new MongoClient(mongoURI)
     try {
         const database = client.db('GIT_DAMN')
         const users = database.collection('users')
