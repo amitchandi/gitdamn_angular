@@ -26,8 +26,9 @@ var git_server = http.createServer(function (req, res) {
         if (!req.url)
         	throw new Error('missing url')
 		
-		const user = req.url.split('/')[1]
-		const repo = req.url.split('/')[2]
+		const urlSegments = req.url.split('/')
+		const user = urlSegments[1]
+		const repo = urlSegments[2]
 		const dir = path.join(global.appRoot, 'repos', `${user}/${repo}`)
 		const reqStream = req.headers['content-encoding'] == 'gzip' ? req.pipe(zlib.createGunzip()) : req
 		

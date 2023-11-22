@@ -7,6 +7,7 @@ import { DialogModule } from 'primeng/dialog'
 import { ButtonModule } from 'primeng/button'
 import { LoginComponent } from './login/login.component'
 import { AuthService } from './auth.service'
+import { initFlowbite } from 'flowbite'
 
 @Component({
   selector: 'app-root',
@@ -22,5 +23,9 @@ export class AppComponent {
 
   isAuthenticated() {
     return this.authService.isUserLoggedIn
+  }
+
+  ngOnInit(): void {
+    initFlowbite()
   }
 }

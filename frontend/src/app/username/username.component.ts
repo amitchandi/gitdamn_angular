@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { UserService } from 'services/user.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
@@ -18,14 +18,18 @@ export class UsernameComponent {
   
   userService: UserService = inject(UserService)
 
-  constructor(private route: ActivatedRoute) {}
+  constructor(private route: ActivatedRoute, private router: Router) {}
 
   async ngOnInit() {
     this.username = this.route.snapshot.paramMap.get('username') ?? ''
     
-    const repos = await this.userService.getUserRepos(this.username)
-    this.repos = repos
-    this.isLoaded = true
+    const response = await this.userService.getUserRepos(this.username)
+    if (response.ok) {
+      this.repos = await response.json()
+      this.isLoaded = true
+    } else {
+      this.router.navigateByUrl('/notfound')
+    }
   }
 }
 

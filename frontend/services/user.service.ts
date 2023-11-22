@@ -19,7 +19,7 @@ export class UserService {
     {
       cache: 'no-cache'
     })
-    return response.json()
+    return response
   }
 
   async registerUser(data: any) {

@@ -6,7 +6,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node ./dist/index.js",
-    "prestart": "tsc"
+    "prestart": "tsc",
+    "builddev": "cd frontend && ng build --configuration=development",
+    "prebuilddev": "tsc",
+    "buildprod": "cd frontend && ng build",
+    "prebuildprod": "tsc"
   },
   "author": "",
   "license": "ISC",
