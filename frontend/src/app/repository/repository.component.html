@@ -52,7 +52,7 @@
                 <a href="" class="dark:text-blue-500">{{latestCommitInfo?.hash?.substr(0,7)}}</a>  {{latestCommitInfo?.date}}</div>
         </div>
 
-        <div *ngIf="repositoryData?.type === '404' else Found"
+        <div *ngIf="false else Found"
             class="pt-5 text-center">
             <h1>404 - Page Not Found</h1>
             <span>The <span class="text-blue-600 dark:bg-black">{{branch}}</span> branch does not contain the path to <var>{{repositoryObjects[repositoryObjects.length - 1]}}</var></span>
@@ -61,8 +61,8 @@
         <ng-template #Found>
             <div class='container top-5 relative overflow-x-auto shadow-md sm:rounded-lg'>
 
-                <div *ngIf="repositoryData?.type === 'file'; else folder">
-                    <pre class="rounded-lg"><code class="language-javascript line-numbers">{{_repositoryData}}</code></pre>
+                <div *ngIf="isFile; else folder">
+                    <pre class="rounded-lg"><code class="language-javascript line-numbers">{{repositoryData}}</code></pre>
                 </div>
                 <ng-template #folder>
                     <table class='w-full text-sm text-left text-gray-500 dark:text-gray-400'>
@@ -84,7 +84,7 @@
                             </tr>
                             
                             <tr
-                                *ngFor="let repoObject of _repositoryData"
+                                *ngFor="let repoObject of repositoryData"
                                 class='bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
                             >
                                 <td class='font-medium text-gray-900 dark:text-white pl-5 w-1'>

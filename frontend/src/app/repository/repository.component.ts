@@ -39,8 +39,7 @@ export class RepositoryComponent {
   username: string = ''
   repositoryName: string = ''
   repositoryObjects: string[] = []
-  repositoryData: RepositoryData | undefined
-  _repositoryData: any
+  repositoryData: any
   currentBranch: string = 'main'
   branches: string[] = []
   branchesDD: any = []
@@ -105,7 +104,7 @@ export class RepositoryComponent {
     this.repositoryObjects.forEach(repo => {
       prevDir += `/${repo}`
       
-      if (!(repo === 'tree' || repo === this.currentBranch)) {
+      if (!(repo === 'tree' || repo === this.branch)) {
         this.breadcrumbs.push({
           name: repo,
           path: prevDir
@@ -125,24 +124,6 @@ export class RepositoryComponent {
       this.previousRepositoryPath = nodes.slice(0, nodes.length - 1).join('/')
     }
     
-    const data = await this.repositoryService.getRepositoryData(this.username, breadcrumbNames)
-
-    this.repositoryData = data
-
-    if (this.repositoryData.type === 'folder') {
-      this.repositoryData.body.sort(repoObject => repoObject.isDirectory ? -1 : 1).forEach(async (repoObject) => {
-        let file = repoObject.name
-        if (this.repositoryObjects.length > 2)
-          file = this.repositoryObjects.filter(repoObject => repoObject !== 'tree' && repoObject !== this.branch).join('%2F') + `%2F${repoObject.name}`
-        
-        const repositoryObjectLogInfo = await this.repositoryService.getRepositoryObjectCommitInfo(this.username, this.repositoryName, this.branch as string, file)
-        repoObject.message = repositoryObjectLogInfo[0]?.message
-        
-        if (repositoryObjectLogInfo[0]?.date)
-          repoObject.date = formatDistance(new Date(repositoryObjectLogInfo[0]?.date), new Date(), { addSuffix: true })
-      })
-    }
-    
     this.isLoaded = true
 
     this.latestCommitInfo = await this.repositoryService.getRepositoryLatestCommitInfo(this.username, this.repositoryName, this.branch)
@@ -159,14 +140,14 @@ export class RepositoryComponent {
     }
 
     if (this.isFile)
-      this._repositoryData = await this.repositoryService.getFileContent(this.username, this.repositoryName, this.latestCommitInfo.hash, path_segments)
+      this.repositoryData = await this.repositoryService.getFileContent(this.username, this.repositoryName, this.latestCommitInfo.hash, path_segments)
     else
-      this._repositoryData = await this.repositoryService.getDirectoryObjects(this.isRoot, this.username, this.repositoryName, this.latestCommitInfo.hash, path_segments)
+      this.repositoryData = await this.repositoryService.getDirectoryObjects(this.isRoot, this.username, this.repositoryName, this.latestCommitInfo.hash, path_segments)
     
-    console.log(this._repositoryData)
+    
 
     if (!this.isFile) {
-      this._repositoryData.sort((repoObject: RepoObject) => repoObject.type === 'tree' ? -1 : 1).forEach(async (repoObject: RepoObject) => {
+      this.repositoryData.sort((repoObject: RepoObject) => repoObject.type === 'tree' ? -1 : 1).forEach(async (repoObject: RepoObject) => {
         let file = repoObject.name
         if (this.repositoryObjects.length > 2)
           file = this.repositoryObjects.filter(repoObject => repoObject !== 'tree' && repoObject !== this.branch).join('%2F') + `%2F${repoObject.name}`
@@ -191,7 +172,6 @@ export class RepositoryComponent {
   }
 
   async onBranchDropDownChanged() {
-    console.log(this.branch)
     const nodes = this.currentRepositoryPath.split('/')
     nodes[4] = this.branch as string
     await this.router.navigate([nodes.join('/')])

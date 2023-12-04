@@ -49,19 +49,15 @@ export class RepositoryService {
     }
   }
 
-  async _getRepoData(isRoot: boolean, username: string, repo_name: string, hash: string, repo_objects: string[]) {
-    let url = `${environment.apiUrl}/${username}/${repo_name}/ls_tree/dir/${hash}`
-    if (!isRoot)
-      url += `/${repo_objects.join('%2F')}`
-    const res = await fetch(url, this.no_cache)
-    return await res.json()
-  }
-
   async getDirectoryObjects(isRoot: boolean, username: string, repo_name: string, hash: string, repo_objects: string[]) {
     let url = `${environment.apiUrl}/${username}/${repo_name}/ls_tree/dir/${hash}`
     if (!isRoot)
       url += `/${repo_objects.join('%2F')}`
     const res = await fetch(url, this.no_cache)
+    if (!res.ok) {
+      console.log(await res.text())
+      return '404'
+    }
     return await res.json()
   }
 
@@ -70,7 +66,8 @@ export class RepositoryService {
     const res = await fetch(url, this.no_cache)
 
     if (!res.ok) {
-      return await res.text()
+      console.log(await res.text())
+      return '404'
     }
 
     return await res.json()

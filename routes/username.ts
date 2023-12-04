@@ -59,37 +59,6 @@ router.get('/:repo_name', async (req: Request, res: Response) => {
 	}
 })
 
-router.get(['/:repo_name/tree/:branch', '/:repo_name/tree/:branch/*'], async (req: Request, res: Response) => {
-    try {
-        const repo_name = req.params.repo_name
-        const branch = req.params.branch
-        const repo_location = req.originalUrl.replace(`/${req.params.username}/${repo_name}/tree/${branch}`, '')
-        const directoryPath =
-        path.join(global.appRoot, 'repos', req.params.username, repo_name, 'files', branch, repo_location)
-        
-        const lstat = await fsPromises.lstat(directoryPath)
-        if (lstat.isDirectory()) {
-            let files = await fsPromises.readdir(directoryPath, { withFileTypes: true })
-            const results = files
-                .filter(file => file.name !== '.git')
-                .map(file => {
-                    return {
-                        name: file.name,
-                        isDirectory: file.isDirectory()
-                    }
-                })
-            res.setHeader('type', 'folder')
-            res.status(200).json(results)
-        } else {
-            res.setHeader('type', 'file')
-            res.status(200).sendFile(directoryPath)
-        }
-    } catch (err) {
-        console.log(err)
-        res.status(404).send('Error: no such file or directory')
-    }
-})
-
 router.get(['/:repo_name/log', '/:repo_name/log/:branchOrHash'], async (req: Request, res: Response) => {
     const repo_name = req.params.repo_name
     const branchOrHash = req.params.branchOrHash

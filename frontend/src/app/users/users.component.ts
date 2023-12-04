@@ -20,7 +20,7 @@ export class UsersComponent {
   userService: UserService = inject(UserService);
 
   constructor(private authService: AuthService) {
-    console.log(authService.isUserLoggedIn)
+    
   }
 
   ngOnInit() {
