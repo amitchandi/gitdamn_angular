@@ -4,7 +4,6 @@ declare global {
         URI: string;
         HTTP_PORT: number;
         HTTPS_PORT: number;
-        GIT_PORT: number;
         SSL_CERT: string;
         SSL_KEY: string;
       }

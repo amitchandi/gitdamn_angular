@@ -4,6 +4,8 @@ import fs from 'fs'
 import simpleGit from 'simple-git'
 import { MongoClient } from 'mongodb'
 
+import { lsTree_Object, lsTree_Root, ls_tree_object, show_File, lsTree_Directory } from '../services/git'
+
 const mongoURI = process.env.uri || 'mongodb://127.0.0.1:27017'
 
 const fsPromises = fs.promises
@@ -126,6 +128,61 @@ router.get(['/:repo_name/log/:branch/:filename'], async (req: Request, res: Resp
     } catch (err) {
         console.log(err)
         res.status(404).json(err)
+    }
+})
+
+router.get('/:repo_name/show/:hash/:filepath', async (req: Request, res: Response) => {
+    const username = req.params.username
+    const repo_name = req.params.repo_name
+    const hash = req.params.hash
+    const filepath = req.params.filepath
+
+    try {
+        const result = await lsTree_Object(username, repo_name, hash, filepath)
+        if (result === '') {
+            res.status(404).json('Not Found')
+            return
+        }
+        const data = await show_File(username, repo_name, result.objectId)
+        res.status(200).json(data)
+    } catch (err) {
+        console.log(err)
+        res.status(400).send(err)
+    }
+})
+
+router.get(['/:repo_name/ls_tree/object/:hash/:filepath','/:repo_name/ls_tree/dir/:hash/:filepath'], async (req: Request, res: Response) => {
+    const repo_name = req.params.repo_name
+    const hash = req.params.hash
+    const filepath = req.params.filepath
+
+    const id_or_dir = req.url.split('/')[3]
+
+    try {
+
+        if (id_or_dir === 'object') {
+            const result = await lsTree_Object(req.params.username, repo_name, hash, filepath)
+            res.status(200).json(result)
+        } else {
+            const result = await lsTree_Directory(req.params.username, repo_name, hash, filepath)
+            res.status(200).json(result)
+        }
+    } catch (err) {
+        console.log(err)
+        res.status(400).send(err)
+    }
+})
+
+router.get('/:repo_name/ls_tree/dir/:hash', async (req: Request, res: Response) => {
+    const repo_name = req.params.repo_name
+    const hash = req.params.hash
+
+    try {
+        const result = await lsTree_Root(req.params.username, repo_name, hash)
+        res.status(200).json(result)
+    } catch (err) {
+        console.log(err)
+        res.status(400).send(err)
     }
 })
 

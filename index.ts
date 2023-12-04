@@ -5,11 +5,6 @@ declare global {
 import * as dotenv from 'dotenv'
 dotenv.config()
 
-import * as http from 'http'
-import { spawn } from 'child_process'
-import * as path from 'path'
-import backend from 'git-http-backend'
-import * as zlib from 'zlib'
 import express from 'express'
 import cors from 'cors'
 
@@ -19,33 +14,9 @@ import * as https from 'https'
 import users from './routes/users'
 import username from './routes/username'
 
+import gitMiddleware from './services/gitMiddleware'
+
 global.appRoot = __dirname.replace('\\dist', '').replace('/dist', '')
-
-var git_server = http.createServer(function (req, res) {
-	try {
-        if (!req.url)
-        	throw new Error('missing url')
-		
-		const urlSegments = req.url.split('/')
-		const user = urlSegments[1]
-		const repo = urlSegments[2]
-		const dir = path.join(global.appRoot, 'repos', `${user}/${repo}`)
-		const reqStream = req.headers['content-encoding'] == 'gzip' ? req.pipe(zlib.createGunzip()) : req
-		
-		reqStream.pipe(new backend(req.url, function (err, service) {
-			if (err) return res.end(err + '\n')
-
-			res.setHeader('content-type', service.type)
-			console.log(service.action, repo, service.fields)
-			const ps = spawn(service.cmd, service.args.concat(dir))
-			ps.stdout.pipe(service.createStream()).pipe(ps.stdin)
-
-		})).pipe(res)
-	} catch(err) {
-		console.log(err)
-	}
-})
-git_server.listen(process.env.GIT_PORT)
 
 const expressApp = express()
 expressApp.use(express.json())
@@ -55,6 +26,8 @@ expressApp.use(cors({
 	exposedHeaders: ['type'],
 	methods: ['GET', 'POST', 'PUT', 'DELETE']
 }))
+
+expressApp.use(gitMiddleware)
 
 expressApp.use('/users', users)
 

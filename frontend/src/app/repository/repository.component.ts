@@ -40,6 +40,7 @@ export class RepositoryComponent {
   repositoryName: string = ''
   repositoryObjects: string[] = []
   repositoryData: RepositoryData | undefined
+  _repositoryData: any
   currentBranch: string = 'main'
   branches: string[] = []
   branchesDD: any = []
@@ -50,6 +51,7 @@ export class RepositoryComponent {
   currentRepositoryDirectory: string = ''
   latestCommitInfo: CommitInfo | undefined
   repositoryLink: string = ''
+  isFile: boolean = true
 
   repositoryService: RepositoryService = inject(RepositoryService)
 
@@ -66,7 +68,6 @@ export class RepositoryComponent {
     this.repositoryObjects = this.route.snapshot.url.map(urlSegment => urlSegment.path)
     this.isRoot = this.repositoryObjects.length === 0 || this.repositoryObjects.length === 2
 
-    console.log(location.href)
     this.repositoryLink = location.href
 
     const branchSummary = await this.repositoryService.getBranches(this.username, this.repositoryName)
@@ -132,22 +133,52 @@ export class RepositoryComponent {
       this.repositoryData.body.sort(repoObject => repoObject.isDirectory ? -1 : 1).forEach(async (repoObject) => {
         let file = repoObject.name
         if (this.repositoryObjects.length > 2)
-          file = this.repositoryObjects.filter(repoObject => repoObject !== 'tree' && repoObject !== this.branch).join('%2F') + '%2F' + repoObject.name
+          file = this.repositoryObjects.filter(repoObject => repoObject !== 'tree' && repoObject !== this.branch).join('%2F') + `%2F${repoObject.name}`
         
-        const repositoryObjectLogInfo = await this.repositoryService.getRepositoryObjectInfo(this.username, this.repositoryName, this.branch as string, file)
+        const repositoryObjectLogInfo = await this.repositoryService.getRepositoryObjectCommitInfo(this.username, this.repositoryName, this.branch as string, file)
         repoObject.message = repositoryObjectLogInfo[0]?.message
         
         if (repositoryObjectLogInfo[0]?.date)
           repoObject.date = formatDistance(new Date(repositoryObjectLogInfo[0]?.date), new Date(), { addSuffix: true })
       })
     }
-
     
     this.isLoaded = true
 
     this.latestCommitInfo = await this.repositoryService.getRepositoryLatestCommitInfo(this.username, this.repositoryName, this.branch)
     
     this.latestCommitInfo.date = formatDistance(new Date(this.latestCommitInfo.date), new Date(), { addSuffix: true })
+
+    const path_segments = breadcrumbNames.filter(name => name !== this.repositoryName && name !== 'tree' && name !== this.branch)
+
+    if (this.isRoot) {
+      this.isFile = false
+    } else {
+      const repo_object_info = await this.repositoryService.getRepositoryObjectInfo(this.isRoot, this.username, this.repositoryName, this.latestCommitInfo.hash, path_segments)
+      this.isFile = repo_object_info.type === 'blob'
+    }
+
+    if (this.isFile)
+      this._repositoryData = await this.repositoryService.getFileContent(this.username, this.repositoryName, this.latestCommitInfo.hash, path_segments)
+    else
+      this._repositoryData = await this.repositoryService.getDirectoryObjects(this.isRoot, this.username, this.repositoryName, this.latestCommitInfo.hash, path_segments)
+    
+    console.log(this._repositoryData)
+
+    if (!this.isFile) {
+      this._repositoryData.sort((repoObject: RepoObject) => repoObject.type === 'tree' ? -1 : 1).forEach(async (repoObject: RepoObject) => {
+        let file = repoObject.name
+        if (this.repositoryObjects.length > 2)
+          file = this.repositoryObjects.filter(repoObject => repoObject !== 'tree' && repoObject !== this.branch).join('%2F') + `%2F${repoObject.name}`
+        
+        const repositoryObjectLogInfo = await this.repositoryService.getRepositoryObjectCommitInfo(this.username, this.repositoryName, this.branch as string, file)
+        repoObject.message = repositoryObjectLogInfo[0]?.message
+        
+        if (repositoryObjectLogInfo[0]?.date)
+          repoObject.date = formatDistance(new Date(repositoryObjectLogInfo[0]?.date), new Date(), { addSuffix: true })
+      })
+    }
+    
   }
 
   ngAfterViewChecked() {
@@ -183,4 +214,12 @@ export interface Breadcrumb {
 export interface RepositoryData {
   type: string;
   body: any[];
+}
+
+export interface RepoObject {
+  objectId: string;
+  type: string;
+  name: string;
+  message: string | undefined;
+  date: string | undefined;
 }

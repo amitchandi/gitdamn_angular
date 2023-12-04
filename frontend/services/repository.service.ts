@@ -6,11 +6,13 @@ import { environment } from 'src/environments/environment';
 })
 export class RepositoryService {
 
+  no_cache: any = {
+    cache: 'no-cache'
+  }
+
   async getBranches(username: string, repositoryName: string) {
-    const response = await fetch(`${environment.apiUrl}/${username}/${repositoryName}/branches`,
-    {
-      cache: 'no-cache'
-    })
+    const url = `${environment.apiUrl}/${username}/${repositoryName}/branches`
+    const response = await fetch(url, this.no_cache)
     return response.json()
   }
 
@@ -20,12 +22,8 @@ export class RepositoryService {
   }
 
   async getRepositoryData(username: string, repositoryObjects: string[]) {
-    const res = await fetch(
-      `${environment.apiUrl}/${username}/${repositoryObjects.join('/')}`,
-      {
-        cache: 'no-cache'
-      }
-    )
+    const url = `${environment.apiUrl}/${username}/${repositoryObjects.join('/')}`
+    const res = await fetch(url, this.no_cache)
     if (!res.ok) {
       return {
         type: '404',
@@ -51,30 +49,62 @@ export class RepositoryService {
     }
   }
 
+  async _getRepoData(isRoot: boolean, username: string, repo_name: string, hash: string, repo_objects: string[]) {
+    let url = `${environment.apiUrl}/${username}/${repo_name}/ls_tree/dir/${hash}`
+    if (!isRoot)
+      url += `/${repo_objects.join('%2F')}`
+    const res = await fetch(url, this.no_cache)
+    return await res.json()
+  }
+
+  async getDirectoryObjects(isRoot: boolean, username: string, repo_name: string, hash: string, repo_objects: string[]) {
+    let url = `${environment.apiUrl}/${username}/${repo_name}/ls_tree/dir/${hash}`
+    if (!isRoot)
+      url += `/${repo_objects.join('%2F')}`
+    const res = await fetch(url, this.no_cache)
+    return await res.json()
+  }
+
+  async getFileContent(username: string, repo_name: string, hash: string, filepath: string[]) {
+    const url = `${environment.apiUrl}/${username}/${repo_name}/show/${hash}/${filepath.join('%2F')}`
+    const res = await fetch(url, this.no_cache)
+
+    if (!res.ok) {
+      return await res.text()
+    }
+
+    return await res.json()
+  }
+
+  async getRepositoryObjectInfo(isRoot: boolean, username: string, repo_name: string, hash: string, filepath: string[]) : Promise<RepositoryObjectInfo> {
+    let url = `${environment.apiUrl}/${username}/${repo_name}/ls_tree/object/${hash}`
+    if (!isRoot)
+      url += `/${filepath.join('%2F')}`
+    const res = await fetch(url, this.no_cache)
+
+    if (!res.ok) {
+      console.log(await res.json())
+    }
+
+    return await res.json()
+  }
+
   async getRepositoryLatestCommitInfo(username: string, repositoryName: string, branch: string | undefined) {
     let url = `${environment.apiUrl}/${username}/${repositoryName}/log`
     if (branch)
       url += `/${branch}`
 
-    const res = await fetch(url,
-      {
-        cache: 'no-cache'
-      }
-    )
+    const res = await fetch(url, this.no_cache)
 
     const jsonData = await res.json()
     const latestCommit: CommitInfo = jsonData.latest
     return latestCommit
   }
 
-  async getRepositoryObjectInfo(username: string, repositoryName: string, branch: string, filename: string) {
+  async getRepositoryObjectCommitInfo(username: string, repositoryName: string, branch: string, filename: string) {
     let url = `${environment.apiUrl}/${username}/${repositoryName}/log/${branch}/${filename}`
 
-    const res = await fetch(url,
-      {
-        cache: 'no-cache'
-      }
-    )
+    const res = await fetch(url, this.no_cache)
 
     const jsonData = await res.json()
     const result: CommitInfo[] = jsonData
@@ -119,4 +149,10 @@ export interface CommitInfo {
   body: string;
   author_name: string;
   author_email: string;
+}
+
+export interface RepositoryObjectInfo {
+  objectId: string;
+  type: string;
+  path: string;
 }
