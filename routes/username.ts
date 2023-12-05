@@ -65,6 +65,10 @@ router.get('/:repo_name', async (req: Request, res: Response) => {
     }
 })
 
+router.get('/:repo_name/', async (req: Request, res: Response) => {
+    
+})
+
 router.get(['/:repo_name/log', '/:repo_name/log/:branchOrHash'], async (req: Request, res: Response) => {
     const repo_name = req.params.repo_name
     const branchOrHash = req.params.branchOrHash
