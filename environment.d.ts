@@ -1,7 +1,8 @@
 declare global {
     namespace NodeJS {
       interface ProcessEnv {
-        URI: string;
+        MONGO_URI: string;
+        API_URI: string;
         HTTP_PORT: number;
         HTTPS_PORT: number;
         SSL_CERT: string;

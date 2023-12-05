@@ -9,8 +9,6 @@ export class AuthService {
    userId: string = ''
 
    async login(username: string, password: string) : Promise<boolean> {
-      console.log(username)
-      console.log(password)
 
       const response = await fetch(`${environment.apiUrl}/users/login/${username}/${password}`,
       {

@@ -46,17 +46,23 @@ router.get('/:repo_name/branches', async (req: Request, res: Response) => {
 })
 
 router.get('/:repo_name', async (req: Request, res: Response) => {
+    const username = req.params.username
     const repo_name = req.params.repo_name
-	const repo_dir = path.join(global.appRoot, 'repos', req.params.username, repo_name)
-	try {
-        const git = simpleGit(repo_dir)
-		const result = await git.branchLocal()
-        const branch = result.current ? result.current : result.all[0]
-        res.redirect(301, `/${req.params.username}/${repo_name}/tree/${branch}`)
-	} catch (err) {
+    const client = new MongoClient(mongoURI)
+    try {
+        const GIT_DAMN = client.db('GIT_DAMN')
+        const repositoryDB = GIT_DAMN.collection('repositories')
+        const result = await repositoryDB.findOne({
+            owner: username,
+            name: repo_name
+        })
+        res.status(200).json(result)
+    } catch (err) {
         console.log(err)
-		res.status(400).end()
-	}
+        res.status(400).send('error')
+    } finally {
+        await client.close();
+    }
 })
 
 router.get(['/:repo_name/log', '/:repo_name/log/:branchOrHash'], async (req: Request, res: Response) => {
