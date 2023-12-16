@@ -5,6 +5,7 @@ import * as path from 'path'
 import backend from 'git-http-backend'
 import * as zlib from 'zlib'
 import authenticate from './authentication'
+import authorize from './authorization'
 
 export default async function gitMiddleware(req: Request, res: Response, next: NextFunction) {
     try {
@@ -17,13 +18,23 @@ export default async function gitMiddleware(req: Request, res: Response, next: N
             next()
             return
         }
+
+        // basic auth
+        const b64auth = (req.headers.authorization || '').split(' ')[1] || ''
+        const [login, password] = Buffer.from(b64auth, 'base64').toString().split(':')
     
-        const validLogin = await authenticate(req);
+        const validLogin = await authenticate(login, password)
     
         if (!validLogin) {
             res.set('www-Authenticate', 'Basic realm="401"')
             res.status(401).send('Authentication required.')
             return
+        }
+
+        const isAuthorized = await authorize(login, user, repo)
+
+        if (!isAuthorized) {
+            res.status(403).send('Not authorized to access this repository.')
         }
 
         if (!req.url)
