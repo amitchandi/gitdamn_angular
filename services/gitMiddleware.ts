@@ -35,6 +35,7 @@ export default async function gitMiddleware(req: Request, res: Response, next: N
 
         if (!isAuthorized) {
             res.status(403).send('Not authorized to access this repository.')
+            return
         }
 
         if (!req.url)
