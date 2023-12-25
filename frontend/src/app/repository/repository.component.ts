@@ -51,6 +51,7 @@ export class RepositoryComponent {
   latestCommitInfo: CommitInfo | undefined
   repositoryLink: string = ''
   isFile: boolean = true
+  notFound: boolean = false
 
   repositoryService: RepositoryService = inject(RepositoryService)
 
@@ -136,7 +137,11 @@ export class RepositoryComponent {
       this.isFile = false
     } else {
       const repo_object_info = await this.repositoryService.getRepositoryObjectInfo(this.isRoot, this.username, this.repositoryName, this.latestCommitInfo.hash, path_segments)
-      this.isFile = repo_object_info.type === 'blob'
+      console.log(repo_object_info)
+      if (repo_object_info)
+        this.isFile = repo_object_info.type === 'blob'
+      else
+        this.notFound = true
     }
 
     if (this.isFile)

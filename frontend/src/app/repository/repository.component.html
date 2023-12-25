@@ -52,7 +52,7 @@
                 <a href="" class="dark:text-blue-500">{{latestCommitInfo?.hash?.substr(0,7)}}</a>  {{latestCommitInfo?.date}}</div>
         </div>
 
-        <div *ngIf="false else Found"
+        <div *ngIf="notFound else Found"
             class="pt-5 text-center">
             <h1>404 - Page Not Found</h1>
             <span>The <span class="text-blue-600 dark:bg-black">{{branch}}</span> branch does not contain the path to <var>{{repositoryObjects[repositoryObjects.length - 1]}}</var></span>

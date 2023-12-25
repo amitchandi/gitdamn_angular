@@ -3,6 +3,7 @@ declare global {
       interface ProcessEnv {
         MONGO_URI: string;
         API_URI: string;
+        REPOSITORIES_LOCATION: string;
         HTTP_PORT: number;
         HTTPS_PORT: number;
         SSL_CERT: string;

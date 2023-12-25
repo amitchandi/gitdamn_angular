@@ -73,7 +73,7 @@ export class RepositoryService {
     return await res.json()
   }
 
-  async getRepositoryObjectInfo(isRoot: boolean, username: string, repo_name: string, hash: string, filepath: string[]) : Promise<RepositoryObjectInfo> {
+  async getRepositoryObjectInfo(isRoot: boolean, username: string, repo_name: string, hash: string, filepath: string[]) : Promise<RepositoryObjectInfo | null> {
     let url = `${environment.apiUrl}/${username}/${repo_name}/ls_tree/object/${hash}`
     if (!isRoot)
       url += `/${filepath.join('%2F')}`
@@ -83,7 +83,12 @@ export class RepositoryService {
       console.log(await res.json())
     }
 
-    return await res.json()
+    const result = await res.json()
+    
+    if (result === '')
+      return null
+
+    return result
   }
 
   async getRepositoryLatestCommitInfo(username: string, repositoryName: string, branch: string | undefined) {

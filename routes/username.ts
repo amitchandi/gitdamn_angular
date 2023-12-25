@@ -4,7 +4,7 @@ import fs from 'fs'
 import simpleGit from 'simple-git'
 import { MongoClient } from 'mongodb'
 
-import { lsTree_Object, lsTree_Root, ls_tree_object, show_File, lsTree_Directory } from '../services/git'
+import { lsTree_Object, lsTree_Root, show_File, lsTree_Directory } from '../services/git'
 
 const mongoURI = process.env.uri || 'mongodb://127.0.0.1:27017'
 
@@ -12,7 +12,7 @@ const fsPromises = fs.promises
 const router = express.Router({mergeParams: true})
 
 router.get('/', async (req: Request, res: Response) => {
-    const directoryPath = path.join(global.appRoot, 'repos', req.params.username)
+    const directoryPath = path.join(global.repos_location, req.params.username)
 	try {
 		let dir = await fsPromises.readdir(directoryPath, { withFileTypes: true })
 		const results = dir
@@ -32,7 +32,7 @@ router.get('/', async (req: Request, res: Response) => {
 
 router.get('/:repo_name/branches', async (req: Request, res: Response) => {
     const repo_name = req.params.repo_name
-	const repo_dir = path.join(global.appRoot, 'repos', req.params.username, repo_name)
+	const repo_dir = path.join(global.repos_location, req.params.username, repo_name)
 	try {
         const git = simpleGit(repo_dir)
 		const result = await git.branchLocal()
@@ -63,10 +63,6 @@ router.get('/:repo_name', async (req: Request, res: Response) => {
     } finally {
         await client.close();
     }
-})
-
-router.get('/:repo_name/', async (req: Request, res: Response) => {
-    
 })
 
 router.get(['/:repo_name/log', '/:repo_name/log/:branchOrHash'], async (req: Request, res: Response) => {
@@ -227,63 +223,287 @@ router.post('/:new_repo_name', async (req: Request, res: Response) => {
 router.delete('/:repo_name', async (req: Request, res: Response) => {
     const client = new MongoClient(mongoURI)
     try {
-        const repo_dir = path.join(global.appRoot, 'repos', req.params.username, req.params.repo_name)
-        await fsPromises.rm(repo_dir, {recursive: true, force: true })
+        const username: string = req.params.username
+        const repo_name: string = req.params.repo_name
 
         const GIT_DAMN = client.db('GIT_DAMN')
-        const repositoryDB = GIT_DAMN.collection('repositories')
-        const result = await repositoryDB.deleteOne({
-            name: req.params.repo_name
+        const repositories = GIT_DAMN.collection('repositories')
+        const result = await repositories.deleteOne({
+            name: repo_name,
+            owner: username
         })
-        if (result.acknowledged)
+
+        if (!result.acknowledged) {
+            res.status(400).send('Database error')
+        }
+        else {
             res.status(200).send('Deleted repository')
-        else
-            res.status(400).send('Error running delete query')
-        await client.close()
+            const repo_dir = path.join(global.repos_location, username, repo_name)
+            await fsPromises.rm(repo_dir, {recursive: true, force: true })
+        }
     }
     catch (err) {
         console.log(err)
-        res.send('Error deleting repository.')
+        res.status(400).send('Error deleting repository.')
     } finally {
         await client.close()
     }
 })
 
-// add user to repo i think. needs to be checked again
-router.put('/addRepo/:repo_id', async (req: Request, res: Response) => {
+router.put('/:repo_name/addUser', async (req: Request, res: Response) => {
     const client = new MongoClient(mongoURI)
     try {
         const username: string = req.params.username
-        const repo_id: string = req.params.repo_id
+        const repo_name: string = req.params.repo_name
 
         const GIT_DAMN = client.db('GIT_DAMN')
-        const users_collection = GIT_DAMN.collection('users')
-        const user = await users_collection.findOne({
-            username: username
-        })
+        const repositories = GIT_DAMN.collection('repositories')
         
-        if (!user)
-            res.send('Error getting user: ' + username)
-        else {
-            if (user.repositories.indexOf(repo_id) === -1) {
-                res.send('User already has repository.')
-                return
-            }
-            user.repositories.push(repo_id)
-            const result = await users_collection.updateOne(
-                {
-                    username: username
-                },
-                {
-                    repositories: user.repositories
-                }
-            )
-            if (!result.acknowledged)
-                res.send('Error updating users\' repositories')
-            else
-                res.send('Updated successfully')
-            await client.close()
+        const filter = {
+            name: repo_name,
+            owner: username
         }
+        
+        const repo = await repositories.findOne(filter)
+        
+        if (!repo) {
+            res.status(400).send('Repository does not exist under user.')
+            return
+        }
+
+        if (repo.accessList.indexOf() > -1) {
+            res.status(400).send('User is already on the access list.')
+            return
+        }
+
+        const result = await repositories.updateOne(
+            filter,
+            {
+                $push: { accessList: req.body }
+            }
+        )
+        
+        if (!result.acknowledged)
+            res.status(400).send('Error updating repository.')
+        else
+            res.status(200).send('Updated successfully.')
+
+    } catch (err) {
+        console.log(err)
+        res.status(400).send('There was an error adding the rpository.')
+    } finally {
+        await client.close()
+    }
+})
+
+router.put('/:repo_name/removeUser', async (req: Request, res: Response) => {
+    const client = new MongoClient(mongoURI)
+    try {
+        const username: string = req.params.username
+        const repo_name: string = req.params.repo_name
+
+        const GIT_DAMN = client.db('GIT_DAMN')
+        const repositories = GIT_DAMN.collection('repositories')
+        
+        const filter = {
+            name: repo_name,
+            owner: username
+        }
+        
+        const repo = await repositories.findOne(filter)
+        
+        if (!repo) {
+            res.status(400).send('Repository does not exist under user.')
+            return
+        }
+
+        if (repo.accessList.indexOf() === -1) {
+            res.status(400).send('User is not on the access list.')
+            return
+        }
+
+        const result = await repositories.updateOne(
+            filter,
+            {
+                $pull: { accessList: req.body }
+            }
+        )
+        
+        if (!result.acknowledged)
+            res.status(400).send('Error updating repository.')
+        else
+            res.status(200).send('Updated successfully.')
+
+    } catch (err) {
+        console.log(err)
+        res.status(400).send('There was an error adding the rpository.')
+    } finally {
+        await client.close()
+    }
+})
+
+router.put('/:repo_name/changeVisibility', async (req: Request, res: Response) => {
+    const client = new MongoClient(mongoURI)
+    try {
+        const username: string = req.params.username
+        const repo_name: string = req.params.repo_name
+
+        const GIT_DAMN = client.db('GIT_DAMN')
+        const repositories = GIT_DAMN.collection('repositories')
+
+        const filter = {
+            name: repo_name,
+            owner: username
+        }
+
+        const repo = await repositories.findOne(filter)
+        
+        if (!repo) {
+            res.status(400).send('Repository does not exist under user')
+            return
+        }
+
+        const result = await repositories.updateOne(
+            filter,
+            {
+                $set: { visibility: repo.visibility === 'private' ? 'public' : 'private' }
+            }
+        )
+        
+        if (!result.acknowledged)
+            res.status(400).send('Error updating repository')
+        else
+            res.status(200).send('Updated successfully')
+
+    } catch (err) {
+        console.log(err)
+        res.status(400).send('There was an error adding the rpository.')
+    } finally {
+        await client.close()
+    }
+})
+
+router.put('/:repo_name/changeOwnership', async (req: Request, res: Response) => {
+    const client = new MongoClient(mongoURI)
+    try {
+        const username: string = req.params.username
+        const repo_name: string = req.params.repo_name
+
+        const GIT_DAMN = client.db('GIT_DAMN')
+        const repositories = GIT_DAMN.collection('repositories')
+        const users = GIT_DAMN.collection('users')
+
+        const filter = {
+            name: repo_name,
+            owner: username
+        }
+
+        const repo = await repositories.findOne(filter)
+        
+        if (!repo) {
+            res.status(400).send('Repository does not exist under user')
+            return
+        }
+
+        const target_username = req.body.username
+
+        const target_user = await users.findOne({ username: target_username })
+
+        if (!target_user) {
+            res.status(400).send(`Target user (${target_username}) does not exist.`)
+            return
+        }
+
+        const target_filter = {
+            name: repo_name,
+            owner: target_username
+        }
+
+        const target_repo = await repositories.findOne(target_filter)
+        
+        if (target_repo) {
+            res.status(400).send('Repository already exists under target user: ' + target_username)
+            return
+        }
+
+        const result = await repositories.updateOne(
+            filter,
+            {
+                $set: { owner: target_username }
+            }
+        )
+        
+        if (!result.acknowledged)
+            res.status(400).send('Error updating repository')
+        else {
+            const old_repo_path = path.join(global.repos_location, username, repo_name)
+            const new_repo_path = path.join(global.repos_location, target_username, repo_name)
+            await fsPromises.rename(old_repo_path, new_repo_path)
+            res.status(200).send('Updated successfully')
+        }
+
+    } catch (err) {
+        console.log(err)
+        res.status(400).send('There was an error adding the repository.')
+    } finally {
+        await client.close()
+    }
+})
+
+router.put('/:repo_name/changeName', async (req: Request, res: Response) => {
+    const client = new MongoClient(mongoURI)
+    try {
+        const username: string = req.params.username
+        const repo_name: string = req.params.repo_name
+
+        const GIT_DAMN = client.db('GIT_DAMN')
+        const repositories = GIT_DAMN.collection('repositories')
+
+        const filter_current = {
+            name: repo_name,
+            owner: username
+        }
+
+        let new_repo_name: string = req.body.name
+        
+        if (!new_repo_name.endsWith('.git'))
+            new_repo_name += '.git'
+
+        const filter_new = {
+            name: new_repo_name,
+            owner: username
+        }
+
+        const new_repo = await repositories.findOne(filter_new)
+
+        if (new_repo) {
+            res.status(400).send(`Repository with name "${new_repo_name}" already exists.`)
+            return
+        }
+
+        const current_repo = await repositories.findOne(filter_current)
+        
+        if (!current_repo) {
+            res.status(400).send('Repository does not exist under user')
+            return
+        }
+
+        const result = await repositories.updateOne(
+            filter_current,
+            {
+                $set: { name: new_repo_name }
+            }
+        )
+        
+        if (!result.acknowledged)
+            res.status(400).send('Error updating repository name')
+        else {
+            const old_repo_path = path.join(global.repos_location, username, repo_name)
+            const new_repo_path = path.join(global.repos_location, username, new_repo_name)
+            await fsPromises.rename(old_repo_path, new_repo_path)
+            res.status(200).send('Updated successfully')
+        }
+
     } catch (err) {
         console.log(err)
         res.status(400).send('There was an error adding the rpository.')

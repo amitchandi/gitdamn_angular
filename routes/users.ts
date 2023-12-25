@@ -12,11 +12,11 @@ const router = express.Router()
 
 const mongoURI = process.env.uri || 'mongodb://127.0.0.1:27017'
 
-router.get('/', (req: Request, res: Response) => {
+router.get('/', (_req: Request, res: Response) => {
     res.redirect('/users/list')
 })
 
-router.get('/list', async (req: Request, res: Response) => {
+router.get('/list', async (_req: Request, res: Response) => {
     const client = new MongoClient(mongoURI)
     try {
         const database = client.db('GIT_DAMN')
@@ -69,13 +69,14 @@ router.post('/create', async (req: Request, res: Response) => {
 
         res.status(200).json(result)
     } catch (err) {
+        console.log(err)
         res.status(400).json(err)
     } finally {
         await client.close()
     }
 })
 
-router.post('/login/:username/:password', async (req: Request, res: Response) => {
+router.post('/validateCredentials/:username/:password', async (req: Request, res: Response) => {
     const client = new MongoClient(mongoURI)
     try {
         const database = client.db('GIT_DAMN')

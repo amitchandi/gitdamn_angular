@@ -7,14 +7,24 @@ import { environment } from 'src/environments/environment'
 export class AuthService {
    isUserLoggedIn: boolean = false
    userId: string = ''
+   
+   constructor() {
+      const userId = localStorage.getItem('userId')
+      const isUserLoggedIn = localStorage.getItem('isUserLoggedIn')
+      if (userId && isUserLoggedIn) {
+         this.userId = userId
+         this.isUserLoggedIn = isUserLoggedIn === 'true'
+      }
+   }
 
    async login(username: string, password: string) : Promise<boolean> {
 
-      const response = await fetch(`${environment.apiUrl}/users/login/${username}/${password}`,
-      {
+      const url = `${environment.apiUrl}/users/login/${username}/${password}`
+      const options: RequestInit = {
          method: 'POST',
          cache: 'no-cache'
-      })
+      }
+      const response = await fetch(url, options)
 
       if (response.ok) {
          const json = await response.json()
@@ -33,14 +43,5 @@ export class AuthService {
       this.isUserLoggedIn = false;
       localStorage.removeItem('isUserLoggedIn')
       localStorage.removeItem('userId')
-   }
-
-   constructor() {
-      const userId = localStorage.getItem('userId')
-      const isUserLoggedIn = localStorage.getItem('isUserLoggedIn')
-      if (userId && isUserLoggedIn) {
-         this.userId = userId
-         this.isUserLoggedIn = isUserLoggedIn === 'true'
-      }
    }
 }
