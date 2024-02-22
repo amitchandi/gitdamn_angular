@@ -8,6 +8,7 @@ declare global {
         HTTPS_PORT: number;
         SSL_CERT: string;
         SSL_KEY: string;
+        JWT_SECRET: string;
       }
     }
   }

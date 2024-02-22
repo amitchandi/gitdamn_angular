@@ -10,14 +10,16 @@ import express from 'express'
 import cors from 'cors'
 import os from 'os'
 import path from 'path'
-
+import cookieParser from 'cookie-parser'
 import fs from 'fs'
 import * as https from 'https'
 
 import users from './routes/users'
 import username from './routes/username'
+import authRoute from './routes/auth'
 
 import gitMiddleware from './services/gitMiddleware'
+import { userAutheticate } from './services/authenticationMiddleware'
 
 global.appRoot = __dirname.replace('\\dist', '').replace('/dist', '')
 
@@ -34,25 +36,26 @@ if (process.env.REPOSITORIES_LOCATION == '') {
 	else
 		global.repos_location = path.join(global.appRoot, process.env.REPOSITORIES_LOCATION)
 } else if (os.type() === 'Darwin') {
-	throw Error('Max not supported')
+	throw Error('Mac is not supported')
 }
 
 const expressApp = express()
-expressApp.use(express.json())
+
 expressApp.use(cors({
-	origin: '*',
+	origin: 'http://localhost:4200',
+	credentials: true,
 	allowedHeaders: ['type', 'content-type'],
 	exposedHeaders: ['type'],
 	methods: ['GET', 'POST', 'PUT', 'DELETE']
 }))
 
 expressApp.use(express.json())
-
+expressApp.use(cookieParser())
 expressApp.use(gitMiddleware)
 
-expressApp.use('/users', users)
-
-expressApp.use('/:username', username)
+expressApp.use('/auth', authRoute)
+expressApp.use('/users', userAutheticate, users)
+expressApp.use('/:username', userAutheticate, username)
 
 if (process.env['USE_HTTPS'] === 'true') {
 	const port = process.env.HTTPS_PORT

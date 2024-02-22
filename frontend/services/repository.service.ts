@@ -6,13 +6,14 @@ import { environment } from 'src/environments/environment';
 })
 export class RepositoryService {
 
-  no_cache: any = {
-    cache: 'no-cache'
+  private requestInit: any = {
+    cache: 'no-cache',
+    credentials: 'include',
   }
 
   async getBranches(username: string, repositoryName: string) {
     const url = `${environment.apiUrl}/${username}/${repositoryName}/branches`
-    const response = await fetch(url, this.no_cache)
+    const response = await fetch(url, this.requestInit)
     return response.json()
   }
 
@@ -21,39 +22,11 @@ export class RepositoryService {
     return branches.current
   }
 
-  async getRepositoryData(username: string, repositoryObjects: string[]) {
-    const url = `${environment.apiUrl}/${username}/${repositoryObjects.join('/')}`
-    const res = await fetch(url, this.no_cache)
-    if (!res.ok) {
-      return {
-        type: '404',
-        body: null
-      }
-    }
-    const contentType = res.headers.get('type') as string
-    
-    if (contentType === 'file') {
-      let fileContents: Array<any> = []
-      for await (const line of makeTextFileLineIterator(res.body?.getReader())) {
-        fileContents.push(line)
-      }
-      return {
-        type: contentType,
-        body: fileContents
-      }
-    }
-
-    return {
-      type: contentType,
-      body: await res.json()
-    }
-  }
-
   async getDirectoryObjects(isRoot: boolean, username: string, repo_name: string, hash: string, repo_objects: string[]) {
     let url = `${environment.apiUrl}/${username}/${repo_name}/ls_tree/dir/${hash}`
     if (!isRoot)
       url += `/${repo_objects.join('%2F')}`
-    const res = await fetch(url, this.no_cache)
+    const res = await fetch(url, this.requestInit)
     if (!res.ok) {
       console.log(await res.text())
       return '404'
@@ -63,7 +36,7 @@ export class RepositoryService {
 
   async getFileContent(username: string, repo_name: string, hash: string, filepath: string[]) {
     const url = `${environment.apiUrl}/${username}/${repo_name}/show/${hash}/${filepath.join('%2F')}`
-    const res = await fetch(url, this.no_cache)
+    const res = await fetch(url, this.requestInit)
 
     if (!res.ok) {
       console.log(await res.text())
@@ -77,7 +50,7 @@ export class RepositoryService {
     let url = `${environment.apiUrl}/${username}/${repo_name}/ls_tree/object/${hash}`
     if (!isRoot)
       url += `/${filepath.join('%2F')}`
-    const res = await fetch(url, this.no_cache)
+    const res = await fetch(url, this.requestInit)
 
     if (!res.ok) {
       console.log(await res.json())
@@ -96,7 +69,7 @@ export class RepositoryService {
     if (branch)
       url += `/${branch}`
 
-    const res = await fetch(url, this.no_cache)
+    const res = await fetch(url, this.requestInit)
 
     const jsonData = await res.json()
     const latestCommit: CommitInfo = jsonData.latest
@@ -104,41 +77,78 @@ export class RepositoryService {
   }
 
   async getRepositoryObjectCommitInfo(username: string, repositoryName: string, branch: string, filename: string) {
-    let url = `${environment.apiUrl}/${username}/${repositoryName}/log/${branch}/${filename}`
+    const url = `${environment.apiUrl}/${username}/${repositoryName}/log/${branch}/${filename}`
 
-    const res = await fetch(url, this.no_cache)
+    const res = await fetch(url, this.requestInit)
 
     const jsonData = await res.json()
     const result: CommitInfo[] = jsonData
     return result
   }
-}
 
-async function* makeTextFileLineIterator(reader: any) {
-  const utf8Decoder = new TextDecoder("utf-8");
-  let { value: chunk, done: readerDone } = await reader.read();
-  chunk = chunk ? utf8Decoder.decode(chunk) : "";
+  async getRepositoryInfo(username: string, repositoryName: string) {
+    const url = `${environment.apiUrl}/${username}/${repositoryName}`
 
-  const newline = /\r?\n/gm;
-  let startIndex = 0;
-
-  while (true) {
-    const result = newline.exec(chunk);
-    if (!result) {
-      if (readerDone) break;
-      const remainder = chunk.substr(startIndex);
-      ({ value: chunk, done: readerDone } = await reader.read());
-      chunk = remainder + (chunk ? utf8Decoder.decode(chunk) : "");
-      startIndex = newline.lastIndex = 0;
-      continue;
-    }
-    yield chunk.substring(startIndex, result.index);
-    startIndex = newline.lastIndex;
+    const res = await fetch(url, this.requestInit)
+    
+    const result: Repository = await res.json()
+    return result
   }
 
-  if (startIndex < chunk.length) {
-    // Last line didn't end in a newline char
-    yield chunk.substr(startIndex);
+  async changeRepositoryVisibility(username: string, repositoryName: string) {
+    const url = `${environment.apiUrl}/${username}/${repositoryName}/changeVisibility`
+    const init: RequestInit = {
+      method: 'PUT',
+      cache: 'no-cache',
+      credentials: 'include',
+    }
+    const res = await fetch(url, init)
+    return res.ok
+  }
+
+  async changeRepositoryName(username: string, repositoryName: string, newName: string) {
+    const url = `${environment.apiUrl}/${username}/${repositoryName}/changeName`
+    const init: RequestInit = {
+      method: 'PUT',
+      cache: 'no-cache',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: newName
+      })
+    }
+    const res = await fetch(url, init)
+    return res.ok
+  }
+
+  async changeRepositoryOwnership(username: string, repositoryName: string, targetUsername: string) {
+    const url = `${environment.apiUrl}/${username}/${repositoryName}/changeOwnership`
+    const init: RequestInit = {
+      method: 'PUT',
+      cache: 'no-cache',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        target_username: targetUsername
+      })
+    }
+    const res = await fetch(url, init)
+    return res.ok
+  }
+
+  async deleteRepository(username: string, repositoryName: string) {
+    const url = `${environment.apiUrl}/${username}/${repositoryName}`
+    const init: RequestInit = {
+      method: 'DELETE',
+      cache: 'no-cache',
+      credentials: 'include'
+    }
+    const res = await fetch(url, init)
+    return res.ok
   }
 }
 
@@ -157,4 +167,17 @@ export interface RepositoryObjectInfo {
   objectId: string;
   type: string;
   path: string;
+}
+
+export interface Repository {
+  _id: string;
+  name: string;
+  owner: string;
+  visibility: string;
+  accessList: RepoAccess[]
+}
+
+export interface RepoAccess {
+  username: string;
+  permission: string;
 }

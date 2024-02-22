@@ -3,8 +3,10 @@ import { AuthService } from './auth.service'
 import { inject } from '@angular/core'
 
 export const authGuard: CanActivateFn = (route, state) => {
-  if (inject(AuthService).isUserLoggedIn)
-    return true
-  else
-    return inject(Router).navigateByUrl('/')
+  const authService = inject(AuthService)
+  if (authService.isUserLoggedIn) {
+    return authService.verifyAuthorization()
+  }
+
+  return inject(Router).navigateByUrl('/')
 }

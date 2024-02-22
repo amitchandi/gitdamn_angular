@@ -4,8 +4,6 @@ import { spawn } from 'child_process'
 import * as path from 'path'
 import backend from 'git-http-backend'
 import * as zlib from 'zlib'
-import authenticate from './authentication'
-import authorize from './authorization'
 
 export default async function gitMiddleware(req: Request, res: Response, next: NextFunction) {
     try {
@@ -56,4 +54,58 @@ export default async function gitMiddleware(req: Request, res: Response, next: N
     } catch(err) {
         console.log(err)
     }
+}
+
+async function authenticate(login: string, password: string) : Promise<boolean> {
+    const url = `${process.env.API_URI}/users/login/${login}/${password}`
+    const options: RequestInit =  {
+       method: 'POST',
+       cache: 'no-cache'
+    }
+    const response = await fetch(url, options)
+    if (!response.ok)
+       console.log('Login Failed: ' + await response.json())
+    return response.ok
+ }
+
+ async function authorize(login: string, username: string, repo: string) : Promise<boolean> {
+    
+    const repo_object: Repo_Object = await getRepoInformation(username, repo)
+
+    if (repo_object.visiblity === 'public') {
+        return true
+    } else {
+        var user = repo_object.accessList.find(e => e.username === login)
+        if (user)
+            return true
+        else
+            return false
+    }
+}
+
+async function getRepoInformation(username: string, repo: string) : Promise<Repo_Object> {
+    const response = await fetch(`${process.env.API_URI}/${username}/${repo}`,
+    {
+        method: 'GET',
+        cache: 'no-cache'
+    })
+
+    if (response.ok) {
+        return await response.json()
+    } else {
+        throw Error('Error retrieving repo information')
+    }
+}
+
+interface Repo_Object {
+    _id: string;
+    name: string;
+    visiblity: string;
+    owner: string;
+    accessList: Repo_Access[];
+}
+
+interface Repo_Access {
+    username: string;
+    permission: string;
 }

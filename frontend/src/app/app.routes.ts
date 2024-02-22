@@ -9,6 +9,7 @@ import { CommitComponent } from './commit/commit.component';
 import { authGuard } from './auth.guard';
 import { SettingsComponent } from './admin/settings/settings.component';
 import { NotfoundComponent } from './notfound/notfound.component';
+import { SettingsComponent as RepoSettings } from './repository/settings/settings.component'
 
 export const routes: Routes = [
     { path: '', component: HomepageComponent },
@@ -29,6 +30,7 @@ export const routes: Routes = [
       canActivateChild: [authGuard],
       children: [
         { path: 'commit', component: CommitComponent },
+        { path: 'settings', component: RepoSettings },
         { path: '**', component: RepositoryComponent },
       ]
     },

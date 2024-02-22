@@ -46,8 +46,7 @@ router.get('/:repo_name/branches', async (req: Request, res: Response) => {
 })
 
 router.get('/:repo_name', async (req: Request, res: Response) => {
-    const username = req.params.username
-    const repo_name = req.params.repo_name
+    const { username, repo_name } = req.params
     const client = new MongoClient(mongoURI)
     try {
         const GIT_DAMN = client.db('GIT_DAMN')
@@ -66,10 +65,8 @@ router.get('/:repo_name', async (req: Request, res: Response) => {
 })
 
 router.get(['/:repo_name/log', '/:repo_name/log/:branchOrHash'], async (req: Request, res: Response) => {
-    const repo_name = req.params.repo_name
-    const branchOrHash = req.params.branchOrHash
-
-	const repo_dir = path.join(global.appRoot, 'repos', req.params.username, repo_name)
+    const { username, repo_name, branchOrHash } = req.params
+	const repo_dir = path.join(global.repos_location, username, repo_name)
 	try {
         const args: any = []
         if (branchOrHash)
@@ -83,11 +80,8 @@ router.get(['/:repo_name/log', '/:repo_name/log/:branchOrHash'], async (req: Req
 })
 
 router.get(['/:repo_name/log/:branch/:filename'], async (req: Request, res: Response) => {
-    const repo_name = req.params.repo_name
-    const branch = req.params.branch
-    const filename = req.params.filename
-
-	const repo_dir = path.join(global.appRoot, 'repos', req.params.username, repo_name)
+    const { username, repo_name, branch, filename } = req.params
+	const repo_dir = path.join(global.repos_location, username, repo_name)
 	try {
         const commands = [
             'log',
@@ -107,11 +101,7 @@ router.get(['/:repo_name/log/:branch/:filename'], async (req: Request, res: Resp
 })
 
 router.get('/:repo_name/show/:hash/:filepath', async (req: Request, res: Response) => {
-    const username = req.params.username
-    const repo_name = req.params.repo_name
-    const hash = req.params.hash
-    const filepath = req.params.filepath
-
+    const { username, repo_name, hash, filepath } = req.params
     try {
         const result = await lsTree_Object(username, repo_name, hash, filepath)
         if (result === '') {
@@ -127,19 +117,14 @@ router.get('/:repo_name/show/:hash/:filepath', async (req: Request, res: Respons
 })
 
 router.get(['/:repo_name/ls_tree/object/:hash/:filepath','/:repo_name/ls_tree/dir/:hash/:filepath'], async (req: Request, res: Response) => {
-    const repo_name = req.params.repo_name
-    const hash = req.params.hash
-    const filepath = req.params.filepath
-
+    const { username, repo_name, hash, filepath } = req.params
     const id_or_dir = req.url.split('/')[3]
-
     try {
-
         if (id_or_dir === 'object') {
-            const result = await lsTree_Object(req.params.username, repo_name, hash, filepath)
+            const result = await lsTree_Object(username, repo_name, hash, filepath)
             res.status(200).json(result)
         } else {
-            const result = await lsTree_Directory(req.params.username, repo_name, hash, filepath)
+            const result = await lsTree_Directory(username, repo_name, hash, filepath)
             res.status(200).json(result)
         }
     } catch (err) {
@@ -149,11 +134,9 @@ router.get(['/:repo_name/ls_tree/object/:hash/:filepath','/:repo_name/ls_tree/di
 })
 
 router.get('/:repo_name/ls_tree/dir/:hash', async (req: Request, res: Response) => {
-    const repo_name = req.params.repo_name
-    const hash = req.params.hash
-
+    const { username, repo_name, hash } = req.params
     try {
-        const result = await lsTree_Root(req.params.username, repo_name, hash)
+        const result = await lsTree_Root(username, repo_name, hash)
         res.status(200).json(result)
     } catch (err) {
         console.log(err)
@@ -162,12 +145,13 @@ router.get('/:repo_name/ls_tree/dir/:hash', async (req: Request, res: Response) 
 })
 
 router.post('/:new_repo_name', async (req: Request, res: Response) => {
-    let new_repo_name = req.params.new_repo_name
+    const { username } = req.params
+    let { new_repo_name } = req.params
 
     if (!new_repo_name.includes('.git'))
         new_repo_name = new_repo_name + '.git'
 
-    const repo_dir = path.join(global.appRoot, 'repos', req.params.username, new_repo_name)
+    const repo_dir = path.join(global.repos_location, username, new_repo_name)
     const hooks_dir = path.join(repo_dir, 'hooks')
     const source_hooks_dir = path.join(global.appRoot, 'hooks')
     const client = new MongoClient(mongoURI)
@@ -178,7 +162,7 @@ router.post('/:new_repo_name', async (req: Request, res: Response) => {
         const result = await repositoryDB.insertOne({
             name: new_repo_name,
             visiblity: 'private',
-            owner: req.params.username
+            owner: username
         })
 
         await fsPromises.mkdir(repo_dir)
@@ -195,17 +179,15 @@ router.post('/:new_repo_name', async (req: Request, res: Response) => {
             fs.readFile(path.join(global.appRoot, hook_file), async (err, contents) => {
                 if (err) return console.log(err)
                 const filepath = path.join(repo_dir, hook_file)
-                console.log(hook_file)
                 await fsPromises.writeFile(filepath, contents)
                 fsPromises.chmod(filepath, '711')
             })
         })
 
-        console.log(result)
         if (!result.acknowledged)
             res.status(400).send('Database error')
         else
-            res.status(200).send(`/${req.params.username}/${new_repo_name}`)
+            res.status(200).send(`/${username}/${new_repo_name}`)
     } catch(err: any) {
         console.log(err)
 
@@ -223,8 +205,7 @@ router.post('/:new_repo_name', async (req: Request, res: Response) => {
 router.delete('/:repo_name', async (req: Request, res: Response) => {
     const client = new MongoClient(mongoURI)
     try {
-        const username: string = req.params.username
-        const repo_name: string = req.params.repo_name
+        const { username, repo_name } = req.params
 
         const GIT_DAMN = client.db('GIT_DAMN')
         const repositories = GIT_DAMN.collection('repositories')
@@ -253,8 +234,7 @@ router.delete('/:repo_name', async (req: Request, res: Response) => {
 router.put('/:repo_name/addUser', async (req: Request, res: Response) => {
     const client = new MongoClient(mongoURI)
     try {
-        const username: string = req.params.username
-        const repo_name: string = req.params.repo_name
+        const { username, repo_name } = req.params
 
         const GIT_DAMN = client.db('GIT_DAMN')
         const repositories = GIT_DAMN.collection('repositories')
@@ -299,8 +279,7 @@ router.put('/:repo_name/addUser', async (req: Request, res: Response) => {
 router.put('/:repo_name/removeUser', async (req: Request, res: Response) => {
     const client = new MongoClient(mongoURI)
     try {
-        const username: string = req.params.username
-        const repo_name: string = req.params.repo_name
+        const { username, repo_name } = req.params
 
         const GIT_DAMN = client.db('GIT_DAMN')
         const repositories = GIT_DAMN.collection('repositories')
@@ -345,8 +324,7 @@ router.put('/:repo_name/removeUser', async (req: Request, res: Response) => {
 router.put('/:repo_name/changeVisibility', async (req: Request, res: Response) => {
     const client = new MongoClient(mongoURI)
     try {
-        const username: string = req.params.username
-        const repo_name: string = req.params.repo_name
+        const { username, repo_name } = req.params
 
         const GIT_DAMN = client.db('GIT_DAMN')
         const repositories = GIT_DAMN.collection('repositories')
@@ -386,8 +364,7 @@ router.put('/:repo_name/changeVisibility', async (req: Request, res: Response) =
 router.put('/:repo_name/changeOwnership', async (req: Request, res: Response) => {
     const client = new MongoClient(mongoURI)
     try {
-        const username: string = req.params.username
-        const repo_name: string = req.params.repo_name
+        const { username, repo_name } = req.params
 
         const GIT_DAMN = client.db('GIT_DAMN')
         const repositories = GIT_DAMN.collection('repositories')
@@ -405,7 +382,7 @@ router.put('/:repo_name/changeOwnership', async (req: Request, res: Response) =>
             return
         }
 
-        const target_username = req.body.username
+        const target_username = req.body.target_username
 
         const target_user = await users.findOne({ username: target_username })
 
@@ -453,8 +430,7 @@ router.put('/:repo_name/changeOwnership', async (req: Request, res: Response) =>
 router.put('/:repo_name/changeName', async (req: Request, res: Response) => {
     const client = new MongoClient(mongoURI)
     try {
-        const username: string = req.params.username
-        const repo_name: string = req.params.repo_name
+        const { username, repo_name } = req.params
 
         const GIT_DAMN = client.db('GIT_DAMN')
         const repositories = GIT_DAMN.collection('repositories')

@@ -27,5 +27,10 @@ export class AppComponent {
 
   ngOnInit(): void {
     initFlowbite()
+    this.authService.verifyAuthorization().then(ok => {
+      if (!ok) {
+          this.authService.logout()
+      }
+    })
   }
 }

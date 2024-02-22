@@ -9,7 +9,8 @@ export class UserService {
   async getUsers() : Promise<GD_User[]> {
     const response = await fetch(`${environment.apiUrl}/users`,
     {
-      cache: 'no-cache'
+      cache: 'no-cache',
+      credentials: 'include',
     })
     return response.json()
   }
@@ -17,7 +18,8 @@ export class UserService {
   async getUserRepos(username: string) {
     const response = await fetch(`${environment.apiUrl}/${username}`,
     {
-      cache: 'no-cache'
+      cache: 'no-cache',
+      credentials: 'include',
     })
     return response
   }

@@ -8,7 +8,7 @@ export interface ls_tree_object {
 }
 
 export async function lsTree_Root(username: string, repo_name: string, hash: string) {
-    const repo_dir = path.join(global.appRoot, 'repos', username, repo_name)
+    const repo_dir = path.join(global.repos_location, username, repo_name)
     const git = simpleGit(repo_dir)
     const commands = [
         'ls-tree',
@@ -24,7 +24,7 @@ export async function lsTree_Root(username: string, repo_name: string, hash: str
 }
 
 export async function lsTree_Directory(username: string, repo_name: string, hash: string, filepath: string) {
-    const repo_dir = path.join(global.appRoot, 'repos', username, repo_name)
+    const repo_dir = path.join(global.repos_location, username, repo_name)
     const git = simpleGit(repo_dir)
     const commands = [
         'ls-tree',
@@ -44,7 +44,7 @@ export async function lsTree_Directory(username: string, repo_name: string, hash
 }
 
 export async function lsTree_Object(username: string, repo_name: string, hash: string, filepath: string) {
-	const repo_dir = path.join(global.appRoot, 'repos', username, repo_name)
+	const repo_dir = path.join(global.repos_location, username, repo_name)
     const git = simpleGit(repo_dir)
     const commands = [
         'ls-tree',
@@ -61,7 +61,7 @@ export async function lsTree_Object(username: string, repo_name: string, hash: s
 }
 
 export async function show_File(username: string, repo_name: string, objectId: string) {
-    const repo_dir = path.join(global.appRoot, 'repos', username, repo_name)
+    const repo_dir = path.join(global.repos_location, username, repo_name)
     const git = simpleGit(repo_dir)
     return await git.show([objectId])
 }
