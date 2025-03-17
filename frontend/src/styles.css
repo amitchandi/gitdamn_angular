@@ -45,3 +45,7 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 }
 
 @import "primeicons/primeicons.css";
+
+html {
+    font-size: 14px;
+}

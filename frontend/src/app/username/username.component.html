@@ -5,17 +5,33 @@
 <ng-template #Loaded>
     <div *ngIf="repos.length == 0; else elseBlock">User has no repositories</div>
     <ng-template #elseBlock>
-        <div class="container mx-auto relative overflow-x-auto shadow-md sm:rounded-lg">
-            <ul class='w-full divide-y divide-gray-200 dark:divide-gray-700'>
-                <li class='border-b-2 border-neutral-100 border-opacity-100 py-4 dark:border-opacity-50'
+        <div class="container mx-auto relative overflow-x-auto sm:rounded-lg">
+            <ul class='w-full'>
+                <li class='border-b-2 border-neutral-100 border-opacity-100
+                py-4 dark:border-opacity-50 columns-3'
                     *ngFor="let repo of repos"
                 >
-                    <a  class='text-blue-600 dark:text-blue-500 hover:underline'
-                        href="/{{username}}/{{repo.name}}">
-                        {{repo.name}}
-                    </a>
-                    <span class="bg-gray-100 text-gray-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full dark:bg-gray-700 dark:text-gray-300 ml-3">Private</span>
-                    <span class='text-left text-gray-500 dark:text-gray-400'>Updated: x hours ago</span>
+                    <div class="w-full">
+                        <a  class='text-blue-600 dark:text-blue-500 hover:underline'
+                            href="/{{username}}/{{repo.name}}">
+                            {{repo.name}}
+                        </a>
+                        <span class="bg-gray-100 text-gray-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full dark:bg-gray-700 dark:text-gray-300 ml-3">
+                            {{repo.visibility}}
+                        </span>
+                    </div>
+                    <div class="w-full">
+                        <span class='text-left text-gray-500 dark:text-gray-400'>
+                            Updated: {{repo.lastCommitDate}}
+                        </span>
+                    </div>
+                    <div class="w-full text-right">
+                        <a class="cursor-pointer" title="Settings"
+                            href="/{{username}}/{{repo.name}}/settings"
+                        >
+                            <mat-icon aria-hidden="false" aria-label="" fontIcon="settings"></mat-icon>
+                        </a>
+                    </div>
                 </li>
             </ul>
         </div>

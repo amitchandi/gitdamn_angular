@@ -10,6 +10,7 @@ import { authGuard } from './auth.guard';
 import { SettingsComponent } from './admin/settings/settings.component';
 import { NotfoundComponent } from './notfound/notfound.component';
 import { SettingsComponent as RepoSettings } from './repository/settings/settings.component'
+import { CreateRepoComponent } from './username/create-repo/create-repo.component';
 
 export const routes: Routes = [
     { path: '', component: HomepageComponent },
@@ -21,10 +22,19 @@ export const routes: Routes = [
         { path: '', component: AdminComponent },
         { path: 'register', component: CreateuserComponent },
         { path: 'settings', component: SettingsComponent },
+        { path: '**', redirectTo: '' }
       ]
     },
-    { path: 'users', component: UsersComponent, canActivate: [authGuard] },
+    {
+      path: 'users',
+      canActivateChild: [authGuard],
+      children: [
+        { path: '', component: UsersComponent },
+        { path: '**', redirectTo: '' }
+      ]
+    },
     { path: ':username', component: UsernameComponent, canActivate: [authGuard] },
+    { path: ':username/new', component: CreateRepoComponent, canActivate: [authGuard] },
     { 
       path: ':username/:reponame',
       canActivateChild: [authGuard],

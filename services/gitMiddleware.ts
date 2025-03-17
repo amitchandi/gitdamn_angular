@@ -4,6 +4,9 @@ import { spawn } from 'child_process'
 import * as path from 'path'
 import backend from 'git-http-backend'
 import * as zlib from 'zlib'
+import { MongoClient } from 'mongodb'
+
+const mongoURI = process.env.uri || 'mongodb://127.0.0.1:27017'
 
 export default async function gitMiddleware(req: Request, res: Response, next: NextFunction) {
     try {
@@ -22,7 +25,7 @@ export default async function gitMiddleware(req: Request, res: Response, next: N
         const [login, password] = Buffer.from(b64auth, 'base64').toString().split(':')
     
         const validLogin = await authenticate(login, password)
-    
+
         if (!validLogin) {
             res.set('www-Authenticate', 'Basic realm="401"')
             res.status(401).send('Authentication required.')
@@ -57,12 +60,21 @@ export default async function gitMiddleware(req: Request, res: Response, next: N
 }
 
 async function authenticate(login: string, password: string) : Promise<boolean> {
-    const url = `${process.env.API_URI}/users/login/${login}/${password}`
+    const url = process.env.API_URI + 'auth/login'
     const options: RequestInit =  {
-       method: 'POST',
-       cache: 'no-cache'
+        method: 'POST',
+        cache: 'no-cache',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+            username: login,
+            password
+       })
     }
     const response = await fetch(url, options)
+    
     if (!response.ok)
        console.log('Login Failed: ' + await response.json())
     return response.ok
@@ -72,7 +84,7 @@ async function authenticate(login: string, password: string) : Promise<boolean> 
     
     const repo_object: Repo_Object = await getRepoInformation(username, repo)
 
-    if (repo_object.visiblity === 'public') {
+    if (repo_object.visibility === 'public') {
         return true
     } else {
         var user = repo_object.accessList.find(e => e.username === login)
@@ -83,24 +95,31 @@ async function authenticate(login: string, password: string) : Promise<boolean> 
     }
 }
 
-async function getRepoInformation(username: string, repo: string) : Promise<Repo_Object> {
-    const response = await fetch(`${process.env.API_URI}/${username}/${repo}`,
-    {
-        method: 'GET',
-        cache: 'no-cache'
-    })
-
-    if (response.ok) {
-        return await response.json()
-    } else {
+async function getRepoInformation(username: string, repo_name: string) : Promise<Repo_Object> {
+    const client = new MongoClient(mongoURI)
+    try {
+        const GIT_DAMN = client.db('GIT_DAMN')
+        const repositoryDB = GIT_DAMN.collection<Repo_Object>('repositories')
+        const result = await repositoryDB.findOne({
+            owner: username,
+            name: repo_name
+        })
+        if (result)
+            return result
+        else
+            throw Error('Error retrieving repo information')
+    } catch (err) {
+        console.log(err)
         throw Error('Error retrieving repo information')
+    } finally {
+        await client.close();
     }
 }
 
 interface Repo_Object {
     _id: string;
     name: string;
-    visiblity: string;
+    visibility: string;
     owner: string;
     accessList: Repo_Access[];
 }

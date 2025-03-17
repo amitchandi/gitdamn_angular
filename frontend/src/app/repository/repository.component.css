@@ -1,0 +1,9 @@
+::ng-deep .p-panel-content {
+    margin-top: 10px;
+    background-color: #353A45;
+    border-radius: 5px;
+}
+
+::ng-deep .p-panel-header {
+    display: none;
+}

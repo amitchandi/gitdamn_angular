@@ -1,4 +1,4 @@
-import { Component, inject, HostListener  } from '@angular/core';
+import { Component, inject, HostListener, ElementRef, ViewChild  } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { CommitInfo, RepositoryService } from 'services/repository.service';
@@ -13,7 +13,12 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { FormsModule } from '@angular/forms';
 import { formatDistance } from 'date-fns';
-import { ClipboardModule } from '@angular/cdk/clipboard'
+import { ClipboardModule } from '@angular/cdk/clipboard';
+import { MenuComponent } from './menu/menu.component';
+import { CardModule } from 'primeng/card';
+import { DividerModule } from 'primeng/divider';
+import { PanelModule } from 'primeng/panel';
+import { SelectButtonModule } from 'primeng/selectbutton';
 
 @Component({
   selector: 'app-repository',
@@ -28,32 +33,43 @@ import { ClipboardModule } from '@angular/cdk/clipboard'
     OverlayPanelModule,
     ButtonModule,
     InputTextModule,
-    ClipboardModule
+    ClipboardModule,
+    MenuComponent,
+    CardModule,
+    DividerModule,
+    PanelModule,
+    SelectButtonModule,
   ],
   templateUrl: './repository.component.html',
   styleUrls: ['./repository.component.css']
 })
 export class RepositoryComponent {
-  isLoaded: boolean = false
-  branch: string | undefined
-  username: string = ''
-  repositoryName: string = ''
-  repositoryObjects: string[] = []
-  repositoryData: any
-  currentBranch: string = 'main'
-  branches: string[] = []
-  branchesDD: any = []
-  breadcrumbs: Breadcrumb[] = []
-  isRoot: boolean = false
-  currentRepositoryPath: string = ''
-  previousRepositoryPath: string = ''
-  currentRepositoryDirectory: string = ''
-  latestCommitInfo: CommitInfo | undefined
-  repositoryLink: string = ''
-  isFile: boolean = true
-  notFound: boolean = false
+  isLoaded: boolean = false;
+  branch: string | undefined;
+  username: string = '';
+  repositoryName: string = '';
+  repositoryObjects: string[] = [];
+  repositoryData: any;
+  currentBranch: string = 'main';
+  branches: string[] = [];
+  branchesDD: any = [];
+  breadcrumbs: Breadcrumb[] = [];
+  isRoot: boolean = false;
+  currentRepositoryPath: string = '';
+  previousRepositoryPath: string = '';
+  currentRepositoryDirectory: string = '';
+  latestCommitInfo: CommitInfo | undefined | null;
+  repositoryLink: string = '';
+  isFile: boolean = true;
+  notFound: boolean = false;
+  isInit = false;
 
-  repositoryService: RepositoryService = inject(RepositoryService)
+  repositoryService: RepositoryService = inject(RepositoryService);
+
+  stateOptions: any[] = [{label: 'HTTPS', value: 'https'}, {label: 'SSH', value: 'ssh'}];
+  urlType: string = 'https';
+  urlInputText = 'http://asdasdsad'
+  @ViewChild('urlInput', { static: false }) urlInput: ElementRef | undefined;
 
   constructor(
     private route: ActivatedRoute,
@@ -75,6 +91,8 @@ export class RepositoryComponent {
     this.currentBranch = branchSummary.current
     
     this.branches = branchSummary.all
+
+    this.urlInputText = window.location.href
 
     this.branchesDD = this.branches.map(e => {
       return {name: e, value: e}
@@ -124,16 +142,21 @@ export class RepositoryComponent {
       const nodes = this.currentRepositoryPath.split('/')
       this.previousRepositoryPath = nodes.slice(0, nodes.length - 1).join('/')
     }
-    
-    this.isLoaded = true
 
     this.latestCommitInfo = await this.repositoryService.getRepositoryLatestCommitInfo(this.username, this.repositoryName, this.branch)
     
-    this.latestCommitInfo.date = formatDistance(new Date(this.latestCommitInfo.date), new Date(), { addSuffix: true })
+    if (this.latestCommitInfo.date) {
+      this.latestCommitInfo.date = formatDistance(new Date(this.latestCommitInfo.date), new Date(), { addSuffix: true })
+    }
 
     const path_segments = breadcrumbNames.filter(name => name !== this.repositoryName && name !== 'tree' && name !== this.branch)
 
-    if (this.isRoot) {
+    console.log(this.latestCommitInfo.hash)
+    if (this.latestCommitInfo.hash.trim() == '') {
+      this.isFile = false
+      this.isInit = true
+      console.log('else case')
+    } else if (this.isRoot) {
       this.isFile = false
     } else {
       const repo_object_info = await this.repositoryService.getRepositoryObjectInfo(this.isRoot, this.username, this.repositoryName, this.latestCommitInfo.hash, path_segments)
@@ -142,6 +165,14 @@ export class RepositoryComponent {
         this.isFile = repo_object_info.type === 'blob'
       else
         this.notFound = true
+    } 
+    console.log(this.isFile)
+
+    this.isLoaded = true
+
+    if (this.latestCommitInfo.hash == '') {
+      console.log('no objects. should set some flag and show instructions for initializing repo')
+      return
     }
 
     if (this.isFile)
@@ -149,8 +180,6 @@ export class RepositoryComponent {
     else
       this.repositoryData = await this.repositoryService.getDirectoryObjects(this.isRoot, this.username, this.repositoryName, this.latestCommitInfo.hash, path_segments)
     
-    
-
     if (!this.isFile) {
       this.repositoryData.sort((repoObject: RepoObject) => repoObject.type === 'tree' ? -1 : 1).forEach(async (repoObject: RepoObject) => {
         let file = repoObject.name
@@ -164,7 +193,13 @@ export class RepositoryComponent {
           repoObject.date = formatDistance(new Date(repositoryObjectLogInfo[0]?.date), new Date(), { addSuffix: true })
       })
     }
-    
+  }
+
+  urlTypeSelect() {
+    if (this.urlType == 'https')
+      this.urlInputText = location.href
+    else
+      this.urlInputText = 'gitea@localhost:chandiman/asdascdfasdasdasd.git'
   }
 
   ngAfterViewChecked() {

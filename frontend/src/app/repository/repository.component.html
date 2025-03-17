@@ -6,117 +6,154 @@
 </div>
 
 <ng-template #Loaded>
-    <div class='flex flex-col items-center pt-6'>
-        
-        <div class='flex container relative'>
+
+    <app-repository-menu></app-repository-menu>
+
+    <div *ngIf="!isInit else NoCommits">
+        <div class='flex flex-col items-center pt-6'>
             
-            <div class="inline w-100px">
-                <p-dropdown [options]="branchesDD" [(ngModel)]="branch" optionLabel="name" optionValue="value" (onChange)="onBranchDropDownChanged()"></p-dropdown>
-            </div>
-            
-            <ul class='flex flex-wrap items-center justify-center align-baseline text-gray-900 dark:text-white w-fit mx-auto mt-2'>
-                <li *ngFor="let breadcrumb of breadcrumbs">
-                    <span *ngIf="breadcrumbs.indexOf(breadcrumb) === breadcrumbs.length - 1; else link" >
-                        {{breadcrumb.name}}
-                    </span>
-    
-                    <ng-template #link>
-                        <a href="{{breadcrumb.path}}" class='text-blue-600 dark:text-blue-500 hover:underline'>
-                            {{breadcrumb.name}}
-                        </a>
-                        <span>/&nbsp;</span>
-                    </ng-template>
-                </li>
-            </ul>
-
-            <div class="mt-2 align-baseline justify-center">
-                <p-overlayPanel #op>
-                    <ng-template pTemplate="content">
-                        <div class="p-inputgroup">
-                            <input pInputText type="text" class="p-inputtext-sm" [(ngModel)]="repositoryLink" [disabled]="true" />
-                            <button pButton [cdkCopyToClipboard]="repositoryLink">
-                                <mat-icon aria-hidden="false" aria-label="" fontIcon="content_copy"></mat-icon>
-                            </button>
-                        </div>
-                    </ng-template>
-                </p-overlayPanel>
-                <p-button (click)="op.toggle($event)" label="Code"></p-button>
-            </div>
-
-        </div>
-
-        <div class="container pt-5 columns-3">
-            <div></div>
-            <div>{{latestCommitInfo?.message}}</div>
-            <div>
-                <a href="" class="dark:text-blue-500">{{latestCommitInfo?.hash?.substr(0,7)}}</a>  {{latestCommitInfo?.date}}</div>
-        </div>
-
-        <div *ngIf="notFound else Found"
-            class="pt-5 text-center">
-            <h1>404 - Page Not Found</h1>
-            <span>The <span class="text-blue-600 dark:bg-black">{{branch}}</span> branch does not contain the path to <var>{{repositoryObjects[repositoryObjects.length - 1]}}</var></span>
-        </div>
-
-        <ng-template #Found>
-            <div class='container top-5 relative overflow-x-auto shadow-md sm:rounded-lg'>
-
-                <div *ngIf="isFile; else folder">
-                    <pre class="rounded-lg"><code class="language-javascript line-numbers">{{repositoryData}}</code></pre>
+            <div class='flex container relative'>
+                
+                <div class="inline w-100px">
+                    <p-dropdown [options]="branchesDD" [(ngModel)]="branch" optionLabel="name" optionValue="value" (onChange)="onBranchDropDownChanged()"></p-dropdown>
                 </div>
-                <ng-template #folder>
-                    <table class='w-full text-sm text-left text-gray-500 dark:text-gray-400'>
-                        <thead class='text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400'>
-                            <tr>
-                                <th></th>
-                                <th class='px-6 py-4'>Name</th>
-                                <th>Last commit message</th>
-                                <th>Last commit date</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr *ngIf="!isRoot;" class='bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'>
-                                <td colSpan='4' class='px-6 py-4 dark:text-white cursor-pointer hover:underline hover:text-blue-600 hover:dark:text-blue-500' (click)="onClickBack()">
-                                    <a href="{{previousRepositoryPath}}">
-                                        ..
-                                    </a>
-                                </td>
-                            </tr>
-                            
-                            <tr
-                                *ngFor="let repoObject of repositoryData"
-                                class='bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
-                            >
-                                <td class='font-medium text-gray-900 dark:text-white pl-5 w-1'>
-                                    <div *ngIf="repoObject.type === 'tree'; else file;">
-                                        <mat-icon aria-hidden="false" aria-label="" fontIcon="folder"></mat-icon>
-                                    </div>
+                
+                <ul class='flex flex-wrap items-center justify-center align-baseline text-gray-900 dark:text-white w-fit mx-auto mt-2'>
+                    <li *ngFor="let breadcrumb of breadcrumbs">
+                        <span *ngIf="breadcrumbs.indexOf(breadcrumb) === breadcrumbs.length - 1; else link" >
+                            {{breadcrumb.name}}
+                        </span>
         
-                                    <ng-template #file>
-                                        <div>
-                                            <mat-icon aria-hidden="false" aria-label="" style="margin-left: 5px;font-size: 20px; width: 20px; height: 20px;" fontSet="far" fontIcon="fa-file"></mat-icon>
-                                        </div>
-                                    </ng-template>
-                                </td>
-                                <td class='flex flex-nowrap py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
-                                    <a
-                                        href='{{currentRepositoryPath}}/{{repoObject.name}}'
-                                        class='align-bottom ml-5 bottom-0 hover:text-blue-600 hover:dark:text-blue-500 hover:underline'
-                                    >
-                                        {{repoObject.name}}
-                                    </a>
-                                </td>
-                                <td>
-                                    <a href="" class="hover:text-blue-600 hover:dark:text-blue-500 hover:underline">{{repoObject.message}}</a>
-                                </td>
-                                <td>{{repoObject.date}}</td>
-                            </tr>
-        
-                        </tbody>
-                    </table>
-                </ng-template>
+                        <ng-template #link>
+                            <a href="{{breadcrumb.path}}" class='text-blue-600 dark:text-blue-500 hover:underline'>
+                                {{breadcrumb.name}}
+                            </a>
+                            <span>/&nbsp;</span>
+                        </ng-template>
+                    </li>
+                </ul>
+    
+                <div class="mt-2 align-baseline justify-center">
+                    <p-overlayPanel #op>
+                        <ng-template pTemplate="content">
+                            <div class="p-inputgroup">
+                                <input #codeURLInput pInputText type="text" class="p-inputtext-sm" [(ngModel)]="repositoryLink" readonly (click)="codeURLInput.select()" />
+                                <button pButton [cdkCopyToClipboard]="repositoryLink" icon="pi pi-copy">
+                                </button>
+                            </div>
+                        </ng-template>
+                    </p-overlayPanel>
+                    <p-button (click)="op.toggle($event)" label="Code"></p-button>
+                </div>
+    
             </div>
-        </ng-template>
-
+    
+            <div class="container pt-5 columns-3">
+                <div></div>
+                <div>{{latestCommitInfo?.message}}</div>
+                <div>
+                    <a href="" class="dark:text-blue-500">{{latestCommitInfo?.hash?.substr(0,7)}}</a>  {{latestCommitInfo?.date}}</div>
+            </div>
+    
+            <div *ngIf="notFound else Found"
+                class="pt-5 text-center">
+                <h1>404 - Page Not Found</h1>
+                <span>The <span class="text-blue-600 dark:bg-black">{{branch}}</span> branch does not contain the path to <var>{{repositoryObjects[repositoryObjects.length - 1]}}</var></span>
+            </div>
+    
+            <ng-template #Found>
+                <div class='container top-5 relative overflow-x-auto shadow-md sm:rounded-lg'>
+    
+                    <div *ngIf="isFile; else folder">
+                        <pre class="rounded-lg"><code class="language-javascript line-numbers">{{repositoryData}}</code></pre>
+                    </div>
+                    <ng-template #folder>
+                        <table class='w-full text-sm text-left text-gray-500 dark:text-gray-400'>
+                            <thead class='text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400'>
+                                <tr>
+                                    <th></th>
+                                    <th class='px-6 py-4'>Name</th>
+                                    <th>Last commit message</th>
+                                    <th>Last commit date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngIf="!isRoot;" class='bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'>
+                                    <td colSpan='4' class='px-6 py-4 dark:text-white cursor-pointer hover:underline hover:text-blue-600 hover:dark:text-blue-500' (click)="onClickBack()">
+                                        <a href="{{previousRepositoryPath}}">
+                                            ..
+                                        </a>
+                                    </td>
+                                </tr>
+                                
+                                <tr
+                                    *ngFor="let repoObject of repositoryData"
+                                    class='bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
+                                >
+                                    <td class='font-medium text-gray-900 dark:text-white pl-5 w-1'>
+                                        <div *ngIf="repoObject.type === 'tree'; else file;">
+                                            <mat-icon aria-hidden="false" aria-label="" fontIcon="folder"></mat-icon>
+                                        </div>
+            
+                                        <ng-template #file>
+                                            <div>
+                                                <mat-icon aria-hidden="false" aria-label="" style="margin-left: 5px;font-size: 20px; width: 20px; height: 20px;" fontSet="far" fontIcon="fa-file"></mat-icon>
+                                            </div>
+                                        </ng-template>
+                                    </td>
+                                    <td class='flex flex-nowrap py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
+                                        <a
+                                            href='{{currentRepositoryPath}}/{{repoObject.name}}'
+                                            class='align-bottom ml-5 bottom-0 hover:text-blue-600 hover:dark:text-blue-500 hover:underline'
+                                        >
+                                            {{repoObject.name}}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="" class="hover:text-blue-600 hover:dark:text-blue-500 hover:underline">{{repoObject.message}}</a>
+                                    </td>
+                                    <td>{{repoObject.date}}</td>
+                                </tr>
+            
+                            </tbody>
+                        </table>
+                    </ng-template>
+                </div>
+            </ng-template>
+    
+        </div>
     </div>
+
+    <ng-template #NoCommits>
+        <div class='flex flex-col items-center pt-6'>
+            <div class="w-4/5">
+                <p-card header="Quick Guide">
+                    <span class="font-bold text-lg">Clone this repository</span> Need help cloning? Visit <a href="https://git-scm.com/book/en/v2/Git-Basics-Getting-a-Git-Repository" target="_blank" class="text-indigo-400">Help</a>.
+                    <br />
+                    <div class="p-inputgroup">
+                        <p-selectButton (onChange)="urlTypeSelect()" [options]="stateOptions" [(ngModel)]="urlType" optionLabel="label" optionValue="value" ></p-selectButton>
+                        <input #urlInput type="text" pInputText readonly (click)="urlInput.select()" [(ngModel)]="urlInputText" />
+                        <p-button icon="pi pi-copy" [cdkCopyToClipboard]="urlInputText"></p-button>
+                    </div>
+                    <p-divider></p-divider>
+                    <span class="font-bold text-lg">Creating a new repository on the command line</span>
+                    <p-panel>
+                        <pre><code>touch README.md
+git init
+git checkout -b main
+git add README.md
+git commit -m "first commit"
+git remote add origin url
+git push -u origin main</code></pre>
+                    </p-panel>
+                    <p-divider></p-divider>
+                    <span class="font-bold text-lg">Pushing an existing repository from the command line</span>
+                    <p-panel>
+                        <pre><code>git remote add origin url
+git push -u origin main</code></pre>
+                    </p-panel>
+                </p-card>
+            </div>
+        </div>
+    </ng-template>
 </ng-template>

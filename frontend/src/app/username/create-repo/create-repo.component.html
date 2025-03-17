@@ -1,0 +1,81 @@
+<form [formGroup]="createRepoForm" (ngSubmit)="onSubmit()">
+    <div class="mx-auto w-3/5 mt-5">
+        <div class="border-b-2 border-b-gray-800 text-center text-2xl">
+            <h1>Create a new repository</h1>
+        
+        </div>
+        <div class="border-b-2 border-b-gray-800 pt-5 pb-5">
+            <p class="text-sm italic">Required fields are marked with an asterisk (*).</p>
+            
+            <div class="mt-5">
+                <label for="repositoryName">Repoistory Name * </label>
+                <br />
+                <input #myInput id="repositoryName" formControlName="repositoryName" type="text" (input)="validateRepoName()"
+                    class="
+                    text-sm rounded-lg block p-2.5 text-gray-900
+                    dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white
+                    {{repoNameInputStyle}}"
+                />
+                <div *ngIf="hasTypedRepoName" class="text-sm">
+                    <div *ngIf="createRepoForm.value.repositoryName != '' else NotBlank">
+
+                        <div *ngIf="checkingValidity else Loaded">
+                            Checking availability...
+                        </div>
+
+                        <ng-template #Loaded>
+                            <p *ngIf="repoNameIsValid; else repoNameNotValid" class="text-green-500">
+                                valid
+                            </p>
+            
+                            <ng-template #repoNameNotValid>
+                                <p class="text-red-700">The repository {{createRepoForm.value.repositoryName}} already exists on this account.</p>
+                            </ng-template>
+                        </ng-template>
+                    </div>
+
+                    <ng-template #NotBlank>
+                        <p class="text-red-700">New repository name must not be blank</p>
+                    </ng-template>
+                </div>
+            </div>
+
+            <div class="mt-10">
+                <label for="repositoryDescription">Description <small class="text-gray-600">(optional)</small></label>
+                <input formControlName="repositoryDescription" type="text" 
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                />
+            </div>
+        </div>
+        <div class="border-b-2 border-b-gray-800 pb-5 pt-5">
+            <div>
+                <input type="radio" id="visiblity-public" formControlName="visibility" value="public"
+                    class="mr-2 w-4 h-4 border-gray-300 focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600 dark:focus:bg-blue-600 dark:bg-gray-700 dark:border-gray-600"
+                />
+                <mat-icon class="align-middle" aria-hidden="false" aria-label="public" fontIcon="public"></mat-icon>
+                <label for="visiblity-public"
+                    class="ms-1 text-sm font-medium text-gray-900 dark:text-gray-300">
+                    Public
+                </label>
+            </div>
+            <br />
+            <div class="inline-block">
+                <input type="radio" id="visiblity-private" formControlName="visibility" value="private"
+                    class="mr-2 w-4 h-4 border-gray-300 focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600 dark:focus:bg-blue-600 dark:bg-gray-700 dark:border-gray-600"
+                />
+                <mat-icon class="align-middle" aria-hidden="false" aria-label="lock" fontIcon="lock"></mat-icon>
+                <label for="visiblity-private"
+                    class="ms-1 text-sm font-medium text-gray-900 dark:text-gray-300">
+                    Private
+                </label>
+            </div>
+        </div>
+
+        <div class="mt-5">
+            <button type="submit"
+            class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                Create Repository
+            </button>
+        </div>
+    </div>
+</form>
