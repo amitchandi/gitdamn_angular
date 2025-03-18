@@ -139,8 +139,8 @@ export class SettingsComponent {
     this.deleteVisible = !this.deleteVisible;
   }
 
-  onRowEditInit(product: any) {
-    this.clonedProducts[product.username as string] = { ...product };
+  onRowEditInit(acessList: any) {
+    this.clonedProducts[acessList.username as string] = { ...acessList };
   }
 
   async onRowEditSave(product: any) {
@@ -164,9 +164,14 @@ export class SettingsComponent {
     delete this.clonedProducts[product.username as string];
   }
 
-  addUserToAccessList() {
+  openAddUserDialog() {
     this.addUserSearchtext = "";
     this.addUserModalVisible = true;
+  }
+
+  addUserToAccessList() {
+    this.addUserSearchtext = "";
+    this.addUserModalVisible = false;
   }
 
   async deleteUserFromAccessList(repoAccess: RepoAccess) {
@@ -177,5 +182,9 @@ export class SettingsComponent {
     );
     console.log(success);
     //TODO needs to reload
+  }
+
+  validateUsernameOrEmail() {
+    this.addUserSearchtext; // TODO check that this username/email exists
   }
 }
