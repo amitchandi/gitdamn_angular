@@ -17,22 +17,23 @@ router.post('/setup', async (req: Request, res: Response) => {
     return res.status(403).json({ error: 'Setup already complete' });
   }
 
-  const { email, password } = req.body as { email?: string; password?: string };
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password required' });
+  const { email, username, password } = req.body as { email?: string; username?: string; password?: string };
+  if (!email || !username || !password) {
+    return res.status(400).json({ error: 'Email, username and password required' });
   }
 
-  const hash = await bcrypt.hash(password, 10);
+  const hash = await bcrypt.hash(password, global.saltRound);
 
   const adminUser = await User.create({
     email,
+    username,
     password: hash,
     role: 'admin'
   });
 
   res.json({
     message: 'Admin created successfully',
-    user: { id: adminUser._id, email: adminUser.email }
+    user: { id: adminUser._id, email: adminUser.email, username: adminUser.username }
   });
 });
 

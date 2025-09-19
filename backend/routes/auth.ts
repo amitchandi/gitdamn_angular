@@ -5,9 +5,10 @@ import { MongoClient } from "mongodb";
 import path from "path";
 import fs from "fs";
 import { userAutheticate } from "../middleware/authenticationMiddleware";
+import { User } from '../models/User';
 
 const fsPromises = fs.promises;
-const saltRound = 10;
+const saltRound = global.saltRound;
 const mongoURI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017";
 
 const router = express.Router();
@@ -49,6 +50,7 @@ router.post("/register", userAutheticate, async (req: Request, res: Response) =>
 
     const database = client.db("GIT_DAMN");
     const users = database.collection("users");
+
 
     let result: any = await users.findOne({
       email: email,
@@ -101,6 +103,17 @@ router.post("/login", async (req: Request, res: Response) => {
   const client = new MongoClient(mongoURI);
   try {
     const { username, password } = req.body;
+
+    var user = await User.findOne({
+      username
+    });
+
+    if (user) {
+      console.log('found with mongoose')
+    } else {
+      console.log('not found wiht mongoose')
+    }
+
     const database = client.db("GIT_DAMN");
     const users = database.collection("users");
     const query = { username: username };

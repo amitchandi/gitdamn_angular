@@ -1,6 +1,7 @@
 declare global {
   var appRoot: string;
   var repos_location: string;
+  var saltRound: number;
 }
 
 import * as dotenv from "dotenv";
@@ -21,6 +22,8 @@ import gitMiddleware from "./middleware/gitMiddleware";
 import ensureSetupComplete from "./middleware/ensureSetupComplete";
 import { userAutheticate } from "./middleware/authenticationMiddleware";
 
+
+global.saltRound = 10;
 global.appRoot = __dirname.replace("\\dist", "").replace("/dist", "");
 
 if (process.env.REPOSITORIES_LOCATION == "") {
