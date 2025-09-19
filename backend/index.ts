@@ -11,15 +11,15 @@ import cors from "cors";
 import os from "os";
 import path from "path";
 import cookieParser from "cookie-parser";
-import fs from "fs";
-import * as https from "https";
 
 import users from "./routes/users";
 import username from "./routes/username";
 import authRoute from "./routes/auth";
+import setupRoute from "./routes/setup";
 
-import gitMiddleware from "./services/gitMiddleware";
-import { userAutheticate } from "./services/authenticationMiddleware";
+import gitMiddleware from "./middleware/gitMiddleware";
+import ensureSetupComplete from "./middleware/ensureSetupComplete";
+import { userAutheticate } from "./middleware/authenticationMiddleware";
 
 global.appRoot = __dirname.replace("\\dist", "").replace("/dist", "");
 
@@ -45,47 +45,46 @@ if (process.env.REPOSITORIES_LOCATION == "") {
   throw Error("Mac is not supported");
 }
 
-const expressApp = express();
+const allowedOrigins = [
+  process.env.FRONTEND_URL_DEV,
+  process.env.FRONTEND_URL_STAGING,
+  process.env.FRONTEND_URL_PROD,
+];
 
+const expressApp = express();
 expressApp.use(
+  // cors({
+  //   origin: "http://localhost:4200",
+  //   credentials: true,
+  //   allowedHeaders: ["type", "content-type"],
+  //   exposedHeaders: ["type"],
+  //   methods: ["GET", "POST", "PUT", "DELETE"],
+  // }),
   cors({
-    origin: "http://localhost:4200",
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     allowedHeaders: ["type", "content-type"],
     exposedHeaders: ["type"],
     methods: ["GET", "POST", "PUT", "DELETE"],
   }),
 );
-
+expressApp.set("trust proxy", true);
 expressApp.use(express.json());
 expressApp.use(cookieParser());
 expressApp.use(gitMiddleware);
 
-expressApp.use("/auth", authRoute);
+expressApp.use("/setup", ensureSetupComplete, setupRoute);
+expressApp.use("/auth", userAutheticate, authRoute);
 expressApp.use("/users", userAutheticate, users);
 expressApp.use("/:username", userAutheticate, username);
 
-if (process.env["USE_HTTPS"] === "true") {
-  const port = process.env.HTTPS_PORT;
-  const ssl_key = process.env.SSL_KEY;
-  const ssl_cert = process.env.SSL_CERT;
-  if (!ssl_key || !ssl_cert)
-    throw new Error("SSL_KEY and SSL_CERT environment variables are required");
-
-  const httpsServer = https.createServer(
-    {
-      key: fs.readFileSync(ssl_key),
-      cert: fs.readFileSync(ssl_cert),
-    },
-    expressApp,
-  );
-
-  httpsServer.listen(port, () => {
-    console.log(`HTTPS Server running on port ${port}`);
-  });
-} else {
-  const port = process.env.HTTP_PORT;
-  expressApp.listen(port, () => {
-    console.log(`Example app listening on port ${port}`);
-  });
-}
+const port = process.env.HTTP_PORT;
+expressApp.listen(port, () => {
+  console.log(`GIT_DAMN API listening on port ${port}`);
+});

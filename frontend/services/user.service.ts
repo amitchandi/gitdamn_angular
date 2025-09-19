@@ -14,7 +14,7 @@ export class UserService {
     })
     return response.json()
   }
-  
+
   async getUserRepos(username: string) {
     const response = await fetch(`${environment.apiUrl}/${username}`,
     {
@@ -25,7 +25,7 @@ export class UserService {
   }
 
   async registerUser(data: any) {
-    const response = await fetch(`${environment.apiUrl}/users/create`,
+    const response = await fetch(`${environment.apiUrl}/auth/register`,
     {
       method: 'POST',
       cache: 'no-cache',

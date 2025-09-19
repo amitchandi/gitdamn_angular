@@ -9,7 +9,7 @@ import {
   lsTree_Root,
   show_File,
   lsTree_Directory,
-} from "../services/git";
+} from "../services/gitService";
 
 const mongoURI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017";
 

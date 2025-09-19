@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import { MongoClient } from "mongodb";
 import path from "path";
 import fs from "fs";
-import { userAutheticate } from "../services/authenticationMiddleware";
+import { userAutheticate } from "../middleware/authenticationMiddleware";
 
 const fsPromises = fs.promises;
 const saltRound = 10;
@@ -21,13 +21,14 @@ const usernameBlackList: string[] = [
   "repository",
   "username",
   "users",
-]; // Route blacklist ie. admin
+  "assets"
+]; // blacklist to protect against Angular routing collisions
 
 router.get("/verify", userAutheticate, async (req: Request, res: Response) => {
   res.end();
 });
 
-router.post("/register", async (req: Request, res: Response) => {
+router.post("/register", userAutheticate, async (req: Request, res: Response) => {
   const client = new MongoClient(mongoURI);
   try {
     const { email, username, password, role } = req.body;
