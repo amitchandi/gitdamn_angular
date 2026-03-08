@@ -89,7 +89,7 @@ router.get(
     } catch (err) {
       // check if repo has any commits
       const commands = ["rev-list", "-n", "1", "--all"];
-      const result = await simpleGit("repos/chandiman/test.git").raw(
+      const result = await simpleGit(repo_dir).raw(
         ...commands,
       );
       if (result == "") {
@@ -231,7 +231,7 @@ router.post("/new_repo", async (req: Request, res: Response) => {
         async (err, contents) => {
           if (err) return console.log(err);
           const filepath = path.join(repo_dir, hook_file);
-          await fsPromises.writeFile(filepath, contents);
+          await fsPromises.writeFile(filepath, new Uint8Array(contents));
           fsPromises.chmod(filepath, "711");
         },
       );

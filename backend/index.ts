@@ -19,8 +19,8 @@ import authRoute from "./routes/auth";
 import setupRoute from "./routes/setup";
 
 import gitMiddleware from "./middleware/gitMiddleware";
-import ensureSetupComplete from "./middleware/ensureSetupComplete";
 import { userAutheticate } from "./middleware/authenticationMiddleware";
+import mongoose from 'mongoose';
 
 
 global.saltRound = 10;
@@ -82,12 +82,13 @@ expressApp.use(express.json());
 expressApp.use(cookieParser());
 expressApp.use(gitMiddleware);
 
-expressApp.use("/setup", ensureSetupComplete, setupRoute);
+expressApp.use("/setup", setupRoute);
 expressApp.use("/auth", userAutheticate, authRoute);
 expressApp.use("/users", userAutheticate, users);
 expressApp.use("/:username", userAutheticate, username);
 
 const port = process.env.HTTP_PORT;
-expressApp.listen(port, () => {
+expressApp.listen(port, async () => {
+  await mongoose.connect('mongodb://localhost:27017/GIT_DAMN');
   console.log(`GIT_DAMN API listening on port ${port}`);
 });

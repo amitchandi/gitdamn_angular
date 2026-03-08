@@ -111,7 +111,7 @@ router.post("/login", async (req: Request, res: Response) => {
     if (user) {
       console.log('found with mongoose')
     } else {
-      console.log('not found wiht mongoose')
+      console.log('not found with mongoose')
     }
 
     const database = client.db("GIT_DAMN");
