@@ -48,3 +48,6 @@ Thumbs.db
 # repos
 /repos/*
 /test_repos
+
+# Environment files
+backend/.env
