@@ -7,7 +7,7 @@
     "install:all": "npm run install:frontend && npm run install:backend",
     "build:frontend": "cd frontend && ng build --prod",
     "start:frontend": "cd frontend && ng serve --configuration=development",
-    "start:backend": "cd backend && node ./dist/index.js",
+    "start:backend": "cd backend && tsc && node ./dist/index.js",
     "start": "concurrently -k -n FRONT,BACKEND -c \"blue,green\" \"npm run start:frontend\" \"npm run start:backend\"",
     "prestart": "cd backend && tsc",
     "deploy": "npm run install:all && npm run build:frontend && npm run start:backend"

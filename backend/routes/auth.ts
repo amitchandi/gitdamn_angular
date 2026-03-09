@@ -1,15 +1,13 @@
 import express, { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { MongoClient } from "mongodb";
 import path from "path";
 import fs from "fs";
-import { userAutheticate } from "../middleware/authenticationMiddleware";
+import { verifyJWT } from "../middleware/authenticationMiddleware";
 import { User } from '../models/User';
 
 const fsPromises = fs.promises;
 const saltRound = global.saltRound;
-const mongoURI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017";
 
 const router = express.Router();
 
@@ -25,12 +23,11 @@ const usernameBlackList: string[] = [
   "assets"
 ]; // blacklist to protect against Angular routing collisions
 
-router.get("/verify", userAutheticate, async (req: Request, res: Response) => {
+router.get("/verify", verifyJWT, async (req: Request, res: Response) => {
   res.end();
 });
 
-router.post("/register", userAutheticate, async (req: Request, res: Response) => {
-  const client = new MongoClient(mongoURI);
+router.post("/register", verifyJWT, async (req: Request, res: Response) => {
   try {
     const { email, username, password, role } = req.body;
 
@@ -48,23 +45,20 @@ router.post("/register", userAutheticate, async (req: Request, res: Response) =>
 
     await fsPromises.mkdir(repo_path);
 
-    const database = client.db("GIT_DAMN");
-    const users = database.collection("users");
 
-
-    let result: any = await users.findOne({
+    let result: any = await User.findOne({
       email: email,
     });
 
     if (result) return res.status(400).send("User already exists");
 
-    result = await users.findOne({
+    result = await User.findOne({
       username: username,
     });
 
     if (result) return res.status(400).send("User already exists");
 
-    result = await users.insertOne({
+    result = await User.insertOne({
       email: email,
       username: username,
       password: hashedPass,
@@ -94,67 +88,50 @@ router.post("/register", userAutheticate, async (req: Request, res: Response) =>
   } catch (err) {
     console.log(err);
     res.status(400).json(err);
-  } finally {
-    await client.close();
   }
 });
 
 router.post("/login", async (req: Request, res: Response) => {
-  const client = new MongoClient(mongoURI);
   try {
-    const { username, password } = req.body;
+    const username = req.body.username;
+    const _password = req.body.password;
 
-    var user = await User.findOne({
-      username
+    const query = { username: username };
+    const result = await User.findOne(query);
+    if (!result) return res.status(400).json("invalid username or password");
+    
+    var match = await bcrypt.compare(_password, result?.password);
+    if (!match) return res.status(400).json("invalid username or password");
+
+    const jwt_payload = {
+      user_id: result._id,
+      username: username,
+      role: result.role,
+    };
+
+    const maxAge = 3 * 60 * 60;
+
+    const jwt_options = {
+      expiresIn: maxAge,
+    };
+
+    const token = jwt.sign(
+      jwt_payload,
+      process.env.JWT_SECRET,
+      jwt_options,
+    );
+
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      maxAge: maxAge * 1000,
     });
 
-    if (user) {
-      console.log('found with mongoose')
-    } else {
-      console.log('not found with mongoose')
-    }
+    const { password, ...userRes } = result.toObject();
 
-    const database = client.db("GIT_DAMN");
-    const users = database.collection("users");
-    const query = { username: username };
-    const result = await users.findOne(query);
-    if (!result) res.status(400).json("invalid username");
-    else {
-      var match = await bcrypt.compare(password, result.password);
-      if (match) {
-        delete result.password;
-
-        const jwt_payload = {
-          user_id: result._id,
-          username: username,
-          role: result.role,
-        };
-
-        const maxAge = 3 * 60 * 60;
-
-        const jwt_options = {
-          expiresIn: maxAge,
-        };
-
-        const token = jwt.sign(
-          jwt_payload,
-          process.env.JWT_SECRET,
-          jwt_options,
-        );
-
-        res.cookie("jwt", token, {
-          httpOnly: true,
-          maxAge: maxAge * 1000,
-        });
-
-        res.status(200).json(result);
-      } else res.status(400).json("password");
-    }
+    res.status(200).json(userRes);
   } catch (err) {
     console.log(err);
     res.status(400).json(err);
-  } finally {
-    await client.close();
   }
 });
 

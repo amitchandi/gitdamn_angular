@@ -12,15 +12,16 @@ import cors from "cors";
 import os from "os";
 import path from "path";
 import cookieParser from "cookie-parser";
+import mongoose from 'mongoose';
 
 import users from "./routes/users";
 import username from "./routes/username";
+import username_repo_name from "./routes/[username]/[repo_name]";
 import authRoute from "./routes/auth";
 import setupRoute from "./routes/setup";
 
 import gitMiddleware from "./middleware/gitMiddleware";
-import { userAutheticate } from "./middleware/authenticationMiddleware";
-import mongoose from 'mongoose';
+import { verifyJWT, loadRepo, requireRepoAccess, requireRepoOwner } from "./middleware/authenticationMiddleware";
 
 
 global.saltRound = 10;
@@ -56,13 +57,6 @@ const allowedOrigins = [
 
 const expressApp = express();
 expressApp.use(
-  // cors({
-  //   origin: "http://localhost:4200",
-  //   credentials: true,
-  //   allowedHeaders: ["type", "content-type"],
-  //   exposedHeaders: ["type"],
-  //   methods: ["GET", "POST", "PUT", "DELETE"],
-  // }),
   cors({
     origin: (origin, callback) => {
       if (!origin || allowedOrigins.includes(origin)) {
@@ -83,12 +77,22 @@ expressApp.use(cookieParser());
 expressApp.use(gitMiddleware);
 
 expressApp.use("/setup", setupRoute);
-expressApp.use("/auth", userAutheticate, authRoute);
-expressApp.use("/users", userAutheticate, users);
-expressApp.use("/:username", userAutheticate, username);
+expressApp.use("/auth", authRoute);
+expressApp.use("/users", verifyJWT, users);
+expressApp.use("/:username", verifyJWT, username);
+expressApp.use("/:username/:repo_name", loadRepo, requireRepoAccess, username_repo_name);
+expressApp.use("/:username/:repo_name/settings", requireRepoOwner, username_repo_name);
 
 const port = process.env.HTTP_PORT;
-expressApp.listen(port, async () => {
-  await mongoose.connect('mongodb://localhost:27017/GIT_DAMN');
-  console.log(`GIT_DAMN API listening on port ${port}`);
+
+async function start() {
+  await mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/GIT_DAMN");
+  expressApp.listen(port, () => {
+    console.log(`GIT_DAMN API listening on port ${port}`);
+  });
+}
+
+start().catch((err) => {
+  console.error("Failed to start server:", err);
+  process.exit(1);
 });
