@@ -6,8 +6,8 @@ export const repositorySchema = new Schema({
   visibility: { type: String, enum: ['private', 'public'], required: true },
   description: { type: String, required: true },
   accessList: [{
-    user: { type: Schema.Types.ObjectId, ref: 'User' },
-    role: { type: String, enum: ['read', 'write'] }
+    user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    permission: { type: String, enum: ['read', 'write'], required: true },
   }],
 });
 

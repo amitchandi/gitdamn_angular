@@ -8,7 +8,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: AuthPayload;
-      repo?: HydratedDocument<IRepository>;
+      repo: HydratedDocument<IRepository>;
     }
   }
 }

@@ -45,19 +45,9 @@ router.put(
   "/changeUserPermission",
   async (req: Request, res: Response) => {
     try {
-      const { username, repo_name } = req.params;
-      
-      const filter = {
-        name: repo_name,
-        owner: username,
-      };
+      const body_al = req.body as { username: string; permission: "read" | "write" };
 
-      const repo = await Repository.findOne(filter);
-
-      if (!repo) {
-        res.status(400).send("Repository does not exist under user.");
-        return;
-      }
+      const repo = req.repo;
 
       if (
         repo.accessList
@@ -70,21 +60,20 @@ router.put(
         return;
       }
 
-      let result1 = await Repository.deleteOne({
-        username: req.body.username,
-        permission: req.body.permission,
+      const user_to_update = await User.findOne({ username: body_al.username });
+
+      if (!user_to_update) {
+        return res.status(400).send("User to update does not exist.");
+      }
+
+      repo.accessList.forEach((al) => {
+        if (al.user.toString() === user_to_update._id.toString()) {
+          al.permission = body_al.permission;
+        }
       });
 
-      if (!result1.acknowledged)
-        res.status(400).send("Error updating repository.");
-
-      let result = await Repository.updateOne(filter, {
-        $push: { accessList: req.body },
-      });
-
-      if (!result.acknowledged)
-        res.status(400).send("Error updating repository.");
-      else res.status(200).send("Updated successfully.");
+      await repo.save();
+      res.status(200).send("Updated successfully.");
     } catch (err) {
       console.log(err);
     }
@@ -93,36 +82,25 @@ router.put(
 
 router.put("/removeUser", async (req: Request, res: Response) => {
   try {
-    const { username, repo_name } = req.params;
+    const repo = req.repo;
 
-    const filter = {
-      name: repo_name,
-      owner: username,
-    };
+    const user_to_remove = await User.findOne({ username: req.body.username });
 
-    const repo = await Repository.findOne(filter);
-
-    if (!repo) {
-      res.status(400).send("Repository does not exist under user.");
-      return;
+    if (!user_to_remove) {
+      return res.status(400).send("User to remove does not exist.");
     }
 
-    if (
-      repo.accessList
-        .map((al: any) => al.username)
-        .indexOf(req.body.username) === -1
-    ) {
-      res.status(400).send("User is not on the access list.");
-      return;
-    }
+    const index_to_remove = repo.accessList
+        .map((al) => al.user)
+        .indexOf(user_to_remove._id);
 
-    const result = await Repository.updateOne(filter, {
-      $pull: { accessList: req.body },
-    });
+    if (index_to_remove === -1)
+      return res.status(400).send("User is not on the access list.");
 
-    if (!result.acknowledged)
-      res.status(400).send("Error updating repository.");
-    else res.status(200).send("Updated successfully.");
+    repo.accessList.splice(index_to_remove, 1);
+
+    await repo.save();
+    res.status(200).send("Updated successfully.");
   } catch (err) {
     console.log(err);
     res.status(400).send("There was an error adding the rpository.");
