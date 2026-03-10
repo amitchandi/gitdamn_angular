@@ -7,7 +7,7 @@ type IRepository = InferSchemaType<typeof repositorySchema>;
 declare global {
   namespace Express {
     interface Request {
-      user?: AuthPayload;
+      user: AuthPayload;
       repo: HydratedDocument<IRepository>;
     }
   }

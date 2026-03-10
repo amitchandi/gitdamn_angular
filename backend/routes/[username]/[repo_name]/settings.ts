@@ -111,29 +111,12 @@ router.put(
   "/changeVisibility",
   async (req: Request, res: Response) => {
     try {
-      const { username, repo_name } = req.params;
+      const repo = req.repo;
+      repo.visibility = repo.visibility === "private" ? "public" : "private"
 
-      const filter = {
-        name: repo_name,
-        owner: username,
-      };
+      await repo.save();
 
-      const repo = await Repository.findOne(filter);
-
-      if (!repo) {
-        res.status(400).send("Repository does not exist under user");
-        return;
-      }
-
-      const result = await Repository.updateOne(filter, {
-        $set: {
-          visibility: repo.visibility === "private" ? "public" : "private",
-        },
-      });
-
-      if (!result.acknowledged)
-        res.status(400).send("Error updating repository");
-      else res.status(200).send("Updated successfully");
+      res.status(200).send("Updated successfully");
     } catch (err) {
       console.log(err);
       res.status(400).send("There was an error adding the rpository.");
@@ -145,67 +128,48 @@ router.put(
   "/changeOwnership",
   async (req: Request, res: Response) => {
     try {
-      const { username, repo_name } = req.params;
-
-      const filter = {
-        name: repo_name,
-        owner: username,
-      };
-
-      const repo = await Repository.findOne(filter);
-
-      if (!repo) {
-        res.status(400).send("Repository does not exist under user");
-        return;
-      }
-
+      const { username } = req.params;
+      const repo = req.repo;
       const target_username = req.body.target_username;
 
       const target_user = await User.findOne({ username: target_username });
 
       if (!target_user) {
-        res
+        return res
           .status(400)
           .send(`Target user (${target_username}) does not exist.`);
-        return;
       }
 
       const target_filter = {
-        name: repo_name,
+        name: repo.name,
         owner: target_username,
       };
 
       const target_repo = await Repository.findOne(target_filter);
 
       if (target_repo) {
-        res
+        return res
           .status(400)
           .send(
-            "Repository already exists under target user: " + target_username,
+          "Repository already exists under target user: " + target_username,
           );
-        return;
       }
 
-      const result = await Repository.updateOne(filter, {
-        $set: { owner: target_username },
-      });
+      repo.owner = target_user._id;
+      await repo.save();
 
-      if (!result.acknowledged)
-        res.status(400).send("Error updating repository");
-      else {
-        const old_repo_path = path.join(
-          global.repos_location,
-          username,
-          repo_name,
-        );
-        const new_repo_path = path.join(
-          global.repos_location,
-          target_username,
-          repo_name,
-        );
-        await fsPromises.rename(old_repo_path, new_repo_path);
-        res.status(200).send("Updated successfully");
-      }
+      const old_repo_path = path.join(
+        global.repos_location,
+        username,
+        repo.name,
+      );
+      const new_repo_path = path.join(
+        global.repos_location,
+        target_username,
+        repo.name,
+      );
+      await fsPromises.rename(old_repo_path, new_repo_path);
+      res.status(200).send("Updated successfully");
     } catch (err) {
       console.log(err);
       res.status(400).send("There was an error adding the repository.");

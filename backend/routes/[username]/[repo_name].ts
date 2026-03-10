@@ -16,16 +16,11 @@ const fsPromises = fs.promises;
 const router = express.Router({ mergeParams: true });
 
 router.get("/", async (req: Request, res: Response) => {
-  const { repo_name } = req.params;
   try {
-    const result = await Repository.findOne({
-      owner: req.user?.user_id,
-      name: repo_name,
-    });
-    res.status(200).json(result);
+    res.status(200).json(req.repo);
   } catch (err) {
     console.log(err);
-    res.status(400).send("error");
+    res.status(400).send("error grabbing repository");
   }
 });
 
@@ -167,7 +162,7 @@ router.delete("/", requireRepoOwner, async (req: Request, res: Response) => {
 
     const result = await Repository.deleteOne({
       name: repo_name,
-      owner: req.user?.user_id,
+      owner: req.user.user_id,
     });
 
     if (!result.acknowledged) {

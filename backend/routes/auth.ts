@@ -5,6 +5,7 @@ import path from "path";
 import fs from "fs";
 import { verifyJWT } from "../middleware/authenticationMiddleware";
 import { User } from '../models/User';
+import { authenticateUser, AuthError } from '../services/authService';
 
 const fsPromises = fs.promises;
 const saltRound = global.saltRound;
@@ -96,17 +97,12 @@ router.post("/login", async (req: Request, res: Response) => {
     const username = req.body.username;
     const _password = req.body.password;
 
-    const query = { username: username };
-    const result = await User.findOne(query);
-    if (!result) return res.status(400).json("invalid username or password");
-    
-    var match = await bcrypt.compare(_password, result?.password);
-    if (!match) return res.status(400).json("invalid username or password");
+    const user = await authenticateUser(username, _password);
 
     const jwt_payload = {
-      user_id: result._id,
+      user_id: user._id,
       username: username,
-      role: result.role,
+      role: user.role,
     };
 
     const maxAge = 3 * 60 * 60;
@@ -126,11 +122,14 @@ router.post("/login", async (req: Request, res: Response) => {
       maxAge: maxAge * 1000,
     });
 
-    const { password, ...userRes } = result.toObject();
+    const { password, ...userRes } = user.toObject();
 
     res.status(200).json(userRes);
   } catch (err) {
     console.log(err);
+    if (err instanceof AuthError) {
+      return res.status(401).json({ error: err.message });
+    }
     res.status(400).json(err);
   }
 });

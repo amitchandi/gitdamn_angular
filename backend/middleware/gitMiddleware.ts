@@ -4,9 +4,12 @@ import { spawn } from "child_process";
 import * as path from "path";
 import backend from "git-http-backend";
 import * as zlib from "zlib";
-import { MongoClient } from "mongodb";
 
-const mongoURI = process.env.uri || "mongodb://127.0.0.1:27017";
+import { HydratedDocument, InferSchemaType } from "mongoose";
+import { Repository, repositorySchema } from "../models/Repository";
+import { User } from '../models/User';
+import { authenticateUser } from '../services/authService';
+type IRepository = InferSchemaType<typeof repositorySchema>;
 
 export default async function gitMiddleware(
   req: Request,
@@ -30,8 +33,7 @@ export default async function gitMiddleware(
       .toString()
       .split(":");
 
-    const baseUrl = `${req.protocol}://${req.get("host")}/`;
-    const validLogin = await authenticate(baseUrl, login, password);
+    const validLogin = await authenticate(login, password);
 
     if (!validLogin) {
       res.set("www-Authenticate", 'Basic realm="401"');
@@ -60,7 +62,6 @@ export default async function gitMiddleware(
           if (err) return res.end(err + "\n");
 
           res.setHeader("content-type", service.type);
-          //console.log(service.cmd, service.args.concat(dir))
           const ps = spawn(service.cmd, service.args.concat(dir));
           ps.stdout.pipe(service.createStream()).pipe(ps.stdin);
         }),
@@ -71,29 +72,9 @@ export default async function gitMiddleware(
   }
 }
 
-async function authenticate(
-  baseUrl: string,
-  login: string,
-  password: string,
-): Promise<boolean> {
-  // const url = process.env.API_URI + 'auth/login'
-  const url = baseUrl + "auth/login";
-  const options: RequestInit = {
-    method: "POST",
-    cache: "no-cache",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify({
-      username: login,
-      password,
-    }),
-  };
-  const response = await fetch(url, options);
-
-  if (!response.ok) console.log("Login Failed: " + (await response.json()));
-  return response.ok;
+async function authenticate(login: string, password: string): Promise<boolean> {
+  const user = await authenticateUser(login, password)
+  return user !== null;
 }
 
 async function authorize(
@@ -101,26 +82,26 @@ async function authorize(
   username: string,
   repo: string,
 ): Promise<boolean> {
-  const repo_object: Repo_Object = await getRepoInformation(username, repo);
+  const repo_object = await getRepoInformation(username, repo);
 
   if (repo_object.visibility === "public") {
     return true;
   } else {
-    var user = repo_object.accessList.find((e) => e.username === login);
-    if (user) return true;
-    else return false;
+
+    const user = User.findOne({ username: login });
+    const user_in_al = repo_object.accessList
+      .map((al) => al.user.toString())
+      .includes(login);
+    return user_in_al;
   }
 }
 
 async function getRepoInformation(
   username: string,
   repo_name: string,
-): Promise<Repo_Object> {
-  const client = new MongoClient(mongoURI);
+): Promise<HydratedDocument<IRepository>> {
   try {
-    const GIT_DAMN = client.db("GIT_DAMN");
-    const repositoryDB = GIT_DAMN.collection<Repo_Object>("repositories");
-    const result = await repositoryDB.findOne({
+    const result = await Repository.findOne({
       owner: username,
       name: repo_name,
     });
@@ -129,8 +110,6 @@ async function getRepoInformation(
   } catch (err) {
     console.log(err);
     throw Error("Error retrieving repo information");
-  } finally {
-    await client.close();
   }
 }
 
